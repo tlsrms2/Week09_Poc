@@ -31,6 +31,8 @@ public class CombatManager : MonoBehaviour
     private int turnCount;
     public int TurnCount => turnCount;
 
+    private int extraDrawNextTurn;
+
     // ═══════════════════════════════════════════
     //  Unity Lifecycle
     // ═══════════════════════════════════════════
@@ -104,8 +106,11 @@ public class CombatManager : MonoBehaviour
         turnCount++;
         player.ResetDefense();
 
-        GameEvents.RaiseDrawPhaseStarted(deckManager.DrawCountPerTurn);
-        deckManager.DrawCards();
+        int drawCount = deckManager.DrawCountPerTurn + extraDrawNextTurn;
+        extraDrawNextTurn = 0;
+
+        GameEvents.RaiseDrawPhaseStarted(drawCount);
+        deckManager.DrawCards(drawCount);
 
         // 드로우 후 바로 배치 페이즈로 전이
         TransitionTo(CombatState.Placement);
@@ -170,19 +175,15 @@ public class CombatManager : MonoBehaviour
     /// 결산 결과를 받아서 데미지/방어도를 적용하고 적 턴으로 전이한다.
     /// Dev A의 GridManager가 결산을 마치고 이 이벤트를 발행한다.
     /// </summary>
-    private void HandleResolutionResult(int totalDamage, int totalDefense)
+    private void HandleResolutionResult(ResolutionResult result)
     {
         if (currentState != CombatState.Resolution) return;
 
-        // 공격 적용
-        if (totalDamage > 0)
-            enemy.TakeDamage(totalDamage);
+        if (result.damage > 0)  enemy.TakeDamage(result.damage);
+        if (result.defense > 0) player.AddDefense(result.defense);
+        if (result.heal > 0)    player.Heal(result.heal);
+        if (result.draw > 0)    extraDrawNextTurn += result.draw;
 
-        // 방어 적용
-        if (totalDefense > 0)
-            player.AddDefense(totalDefense);
-
-        // 핸드에 남은 카드 버리기
         deckManager.DiscardHand();
 
         // 승패 판정

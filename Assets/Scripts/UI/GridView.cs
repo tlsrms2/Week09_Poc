@@ -122,5 +122,5 @@ public class GridView : MonoBehaviour
 
     private void HandleBlockPlaced(CardData _, int x, int y) => RefreshGrid();
     private void HandleDrawPhaseStarted(int _) => RefreshGrid();
-    private void HandleResolutionResult(int _, int __) => RefreshGrid();
+    private void HandleResolutionResult(ResolutionResult _) => RefreshGrid();
 }

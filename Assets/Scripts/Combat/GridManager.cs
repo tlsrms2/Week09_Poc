@@ -118,30 +118,19 @@ public class GridManager : MonoBehaviour
     /// 현재 배치된 블록들의 예상 데미지/방어도를 반환한다. 이벤트는 발행하지 않는다.
     /// UI 미리보기에서 블록을 놓을 때마다 호출한다.
     /// </summary>
-    public (int damage, int defense) GetPreview()
-    {
-        return Calculate();
-    }
+    public ResolutionResult GetPreview() => Calculate();
 
-    /// <summary>
-    /// 배치된 모든 블록을 순회해 최종 데미지/방어도를 계산하고 이벤트로 발행한다.
-    /// </summary>
     private void CalculateAndRaiseResolution()
     {
-        var (totalDamage, totalDefense) = Calculate();
-        Debug.Log($"[GridManager] 결산 — 공격 {totalDamage}, 방어 {totalDefense}");
-        
-        // 결산(데미지/방어도 계산)이 끝났으므로 데이터를 초기화한다.
+        ResolutionResult result = Calculate();
+        Debug.Log($"[GridManager] 결산 — 공격 {result.damage}, 방어 {result.defense}, 회복 {result.heal}, 드로우 +{result.draw}");
         ClearGrid();
-
-        // 계산된 결과를 발행한다. (이때 UI가 갱신되면 빈 그리드가 렌더링됨)
-        GameEvents.RaiseResolutionResult(totalDamage, totalDefense);
+        GameEvents.RaiseResolutionResult(result);
     }
 
-    private (int damage, int defense) Calculate()
+    private ResolutionResult Calculate()
     {
-        int totalDamage = 0;
-        int totalDefense = 0;
+        var result = new ResolutionResult();
 
         foreach (var pb in placedBlocks)
         {
@@ -151,20 +140,27 @@ public class GridManager : MonoBehaviour
             {
                 int gx = pb.originX + col;
                 int gy = pb.originY + row;
-
                 overlapBonus += overlapCount[gx, gy] - 1;
             }
 
-            int multiplier    = 1 + overlapBonus;
-            int effectivePower = pb.card.BasePower * multiplier;
+            int multiplier = 1 + overlapBonus;
 
-            if (pb.card.Type == CardType.Attack)
-                totalDamage  += effectivePower;
-            else
-                totalDefense += effectivePower;
+            foreach (var effect in pb.card.Effects)
+            {
+                int power = effect.power * multiplier;
+                switch (effect.effectType)
+                {
+                    case CardType.Attack:  result.damage  += power; break;
+                    case CardType.Defense: result.defense += power; break;
+                    case CardType.Heal:    result.heal    += power; break;
+                    case CardType.Draw:    result.draw    += effect.power; break;
+                    case CardType.Drain:   result.damage  += power;
+                                          result.heal    += power; break;
+                }
+            }
         }
 
-        return (totalDamage, totalDefense);
+        return result;
     }
 
     private void ClearGrid()

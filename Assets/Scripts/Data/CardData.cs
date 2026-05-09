@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -15,13 +16,9 @@ public class CardData : ScriptableObject
     [TextArea(2, 4)]
     [SerializeField] private string description = "";
 
-    [Header("전투 속성")]
-    [Tooltip("카드 효과 유형 (공격 / 방어)")]
-    [SerializeField] private CardType cardType = CardType.Attack;
-
-    [Tooltip("기본 위력 (증폭 전 원본 값)")]
-    [Min(0)]
-    [SerializeField] private int basePower = 5;
+    [Header("효과 목록")]
+    [Tooltip("한 장에 여러 효과를 부여할 수 있다.")]
+    [SerializeField] private List<CardEffect> effects = new();
 
     [HideInInspector]
     [SerializeField] private int width = 1;
@@ -35,8 +32,11 @@ public class CardData : ScriptableObject
     // ── Public Properties ──
     public string CardName => cardName;
     public string Description => description;
-    public CardType Type => cardType;
-    public int BasePower => basePower;
+    public IReadOnlyList<CardEffect> Effects => effects;
+
+    // 첫 번째 효과 기준 — 기존 코드 호환용
+    public CardType Type    => effects.Count > 0 ? effects[0].effectType : CardType.Attack;
+    public int      BasePower => effects.Count > 0 ? effects[0].power    : 0;
     
     public int Width => width;
     public int Height => height;

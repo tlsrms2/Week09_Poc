@@ -49,8 +49,7 @@ public class CardDataEditor : Editor
     // SerializedProperty 캐시 (Card 부분)
     private SerializedProperty propCardName;
     private SerializedProperty propDescription;
-    private SerializedProperty propCardType;
-    private SerializedProperty propBasePower;
+    private SerializedProperty propEffects;
 
     private void OnEnable()
     {
@@ -62,8 +61,7 @@ public class CardDataEditor : Editor
         // Card
         propCardName    = serializedObject.FindProperty("cardName");
         propDescription = serializedObject.FindProperty("description");
-        propCardType    = serializedObject.FindProperty("cardType");
-        propBasePower   = serializedObject.FindProperty("basePower");
+        propEffects     = serializedObject.FindProperty("effects");
     }
 
     public override void OnInspectorGUI()
@@ -86,9 +84,8 @@ public class CardDataEditor : Editor
         EditorGUILayout.PropertyField(propDescription);
         
         EditorGUILayout.Space(4);
-        DrawSectionHeader("⚔️ 전투 속성");
-        EditorGUILayout.PropertyField(propCardType);
-        EditorGUILayout.PropertyField(propBasePower);
+        DrawSectionHeader("⚔️ 효과 목록");
+        EditorGUILayout.PropertyField(propEffects, true);
 
         EditorGUILayout.Space(12);
 

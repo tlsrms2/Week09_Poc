@@ -25,10 +25,10 @@ public class DamagePreviewView : MonoBehaviour
 
     private void HandleBlockPlaced(CardData _, int x, int y)
     {
-        var (damage, defense) = gridManager.GetPreview();
+        ResolutionResult r = gridManager.GetPreview();
 
-        if (damageText != null)  damageText.text  = $"공격  {damage}";
-        if (defenseText != null) defenseText.text = $"방어  {defense}";
+        if (damageText != null)  damageText.text  = $"공격  {r.damage}";
+        if (defenseText != null) defenseText.text = $"방어  {r.defense}";
     }
 
     private void HandleDrawPhaseStarted(int _)

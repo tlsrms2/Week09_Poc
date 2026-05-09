@@ -6,4 +6,7 @@ public enum CardType
 {
     Attack,     // 적에게 데미지
     Defense,    // 자신에게 방어도 부여
+    Heal,       // 자신 HP 회복
+    Drain,      // 적에게 데미지 + 자신 HP 회복
+    Draw,       // 카드 추가 드로우 (power = 드로우 매수)
 }

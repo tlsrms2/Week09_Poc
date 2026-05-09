@@ -89,8 +89,8 @@ namespace Cyg.UI
             if (totalText != null)
             {
                 ApplySharedFont(totalText);
-                var (damage, defense) = gridManager != null ? gridManager.GetPreview() : (0, 0);
-                totalText.SetText($"{attackLabel} {damage}\n{defenseLabel} {defense}");
+                ResolutionResult r = gridManager != null ? gridManager.GetPreview() : default;
+                totalText.SetText($"{attackLabel} {r.damage}\n{defenseLabel} {r.defense}");
             }
         }
 
