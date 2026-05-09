@@ -34,6 +34,8 @@ namespace Cyg.UI
 
         private readonly List<CardVisual> cards = new();
         private readonly HashSet<Transform> inactiveCards = new();
+        private readonly Dictionary<Transform, CardStaticPose> cardStaticPoses = new();
+        private readonly Dictionary<Transform, CardPose> inactiveCardPoses = new();
         private Canvas rootCanvas;
         private Camera eventCamera;
         private int hoveredIndex = -1;
@@ -151,7 +153,13 @@ namespace Cyg.UI
                     continue;
                 }
 
-                cards.Add(new CardVisual(card));
+                if (!cardStaticPoses.TryGetValue(card, out CardStaticPose staticPose))
+                {
+                    staticPose = new CardStaticPose(card.localScale, card.localRotation);
+                    cardStaticPoses.Add(card, staticPose);
+                }
+
+                cards.Add(new CardVisual(card, staticPose));
             }
         }
 
@@ -185,6 +193,15 @@ namespace Cyg.UI
 
             inactiveCards.Add(cardTransform);
 
+            if (cardTransform is RectTransform rectTransform)
+            {
+                inactiveCardPoses[cardTransform] = new CardPose(
+                    rectTransform.anchoredPosition,
+                    rectTransform.localScale,
+                    rectTransform.localRotation
+                );
+            }
+
             if (cardTransform.TryGetComponent(out CanvasGroup canvasGroup))
             {
                 canvasGroup.alpha = 0.35f;
@@ -213,6 +230,7 @@ namespace Cyg.UI
             }
 
             inactiveCards.Remove(cardTransform);
+            inactiveCardPoses.Remove(cardTransform);
 
             if (cardTransform.TryGetComponent(out CanvasGroup canvasGroup))
             {
@@ -333,6 +351,11 @@ namespace Cyg.UI
                     continue;
                 }
 
+                if (TryApplyInactivePose(card.RectTransform))
+                {
+                    continue;
+                }
+
                 float fanAmount = GetFanAmount(i);
                 Vector2 targetPosition = card.BasePosition + GetFanOffset(fanAmount);
                 Vector3 targetScale = card.BaseScale;
@@ -404,6 +427,20 @@ namespace Cyg.UI
             return rectTransform != null && inactiveCards.Contains(rectTransform);
         }
 
+        private bool TryApplyInactivePose(RectTransform rectTransform)
+        {
+            if (rectTransform == null || !inactiveCardPoses.TryGetValue(rectTransform, out CardPose pose))
+            {
+                return false;
+            }
+
+            float t = 1f - Mathf.Exp(-animationSpeed * Time.unscaledDeltaTime);
+            rectTransform.anchoredPosition = Vector2.Lerp(rectTransform.anchoredPosition, pose.Position, t);
+            rectTransform.localScale = Vector3.Lerp(rectTransform.localScale, pose.Scale, t);
+            rectTransform.localRotation = Quaternion.Slerp(rectTransform.localRotation, pose.Rotation, t);
+            return true;
+        }
+
         private float GetFanAmount(int index)
         {
             if (!useFanLayout || cards.Count <= 1)
@@ -470,18 +507,44 @@ namespace Cyg.UI
 
         private readonly struct CardVisual
         {
-            public CardVisual(RectTransform rectTransform)
+            public CardVisual(RectTransform rectTransform, CardStaticPose staticPose)
             {
                 RectTransform = rectTransform;
                 BasePosition = rectTransform.anchoredPosition;
-                BaseScale = rectTransform.localScale;
-                BaseRotation = rectTransform.localRotation;
+                BaseScale = staticPose.Scale;
+                BaseRotation = staticPose.Rotation;
             }
 
             public RectTransform RectTransform { get; }
             public Vector2 BasePosition { get; }
             public Vector3 BaseScale { get; }
             public Quaternion BaseRotation { get; }
+        }
+
+        private readonly struct CardStaticPose
+        {
+            public CardStaticPose(Vector3 scale, Quaternion rotation)
+            {
+                Scale = scale;
+                Rotation = rotation;
+            }
+
+            public Vector3 Scale { get; }
+            public Quaternion Rotation { get; }
+        }
+
+        private readonly struct CardPose
+        {
+            public CardPose(Vector2 position, Vector3 scale, Quaternion rotation)
+            {
+                Position = position;
+                Scale = scale;
+                Rotation = rotation;
+            }
+
+            public Vector2 Position { get; }
+            public Vector3 Scale { get; }
+            public Quaternion Rotation { get; }
         }
     }
 }
