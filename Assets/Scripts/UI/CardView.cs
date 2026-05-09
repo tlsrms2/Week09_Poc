@@ -15,6 +15,11 @@ using UnityEngine.UI;
 public class CardView : MonoBehaviour,
     IBeginDragHandler, IDragHandler, IEndDragHandler
 {
+    [Header("Inspector 직접 설정 (테스트용)")]
+    [SerializeField] private CardData initialCardData;
+    [SerializeField] private GridView gridView;
+    [SerializeField] private GridManager gridManager;
+
     [Header("UI 참조")]
     [SerializeField] private TextMeshProUGUI cardNameText;
     [SerializeField] private TextMeshProUGUI powerText;
@@ -25,8 +30,6 @@ public class CardView : MonoBehaviour,
 
     // ── Runtime ──
     private CardData cardData;
-    private GridView gridView;
-    private GridManager gridManager;
 
     private Canvas rootCanvas;
     private CanvasGroup canvasGroup;
@@ -43,14 +46,21 @@ public class CardView : MonoBehaviour,
         canvasGroup = GetComponent<CanvasGroup>();
     }
 
+    private void Start()
+    {
+        // Inspector에 SO가 연결된 경우 자동 초기화
+        if (initialCardData != null)
+            Setup(initialCardData, gridView, gridManager);
+    }
+
     public void Setup(CardData data, GridView grid, GridManager manager)
     {
         cardData    = data;
         gridView    = grid;
         gridManager = manager;
 
-        cardNameText.text = data.CardName;
-        powerText.text    = data.BasePower.ToString();
+        if (cardNameText != null) cardNameText.text = data.CardName;
+        if (powerText != null)    powerText.text    = data.BasePower.ToString();
 
         if (cardTypeIndicator != null)
             cardTypeIndicator.color = data.Type == CardType.Attack ? attackColor : defenseColor;

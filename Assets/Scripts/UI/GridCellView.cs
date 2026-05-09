@@ -46,13 +46,16 @@ public class GridCellView : MonoBehaviour
         if (symbol == SymbolType.None)
         {
             SetState(CellHighlight.Empty);
-            if (symbolLabel != null) symbolLabel.text = "";
+            if (symbolLabel != null)  symbolLabel.text  = "";
             if (overlapLabel != null) overlapLabel.text = "";
         }
         else
         {
-            SetState(CellHighlight.Occupied);
-            if (symbolLabel != null) symbolLabel.text = symbol.ToString()[..2]; // 앞 두 글자
+            // 심볼 색상으로 배경 직접 설정 (Occupied 고정색 대신)
+            Color c = SymbolVisuals.GetColor(symbol);
+            background.color = new Color(c.r, c.g, c.b, 0.85f);
+
+            if (symbolLabel != null)  symbolLabel.text  = symbol.ToString()[..2];
             if (overlapLabel != null) overlapLabel.text = overlapCount > 1 ? $"×{overlapCount}" : "";
         }
     }

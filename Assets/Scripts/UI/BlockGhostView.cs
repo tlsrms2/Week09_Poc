@@ -8,10 +8,8 @@ using UnityEngine.UI;
 [RequireComponent(typeof(CanvasGroup))]
 public class BlockGhostView : MonoBehaviour
 {
-    private static readonly Color validColor   = new(0.10f, 0.90f, 0.25f, 0.65f);
-    private static readonly Color invalidColor = new(0.90f, 0.15f, 0.15f, 0.65f);
-
     private Image[] tiles;
+    private Color[] baseColors; // 심볼별 원본 색상 보존
 
     // ═══════════════════════════════════════════
     //  Init
@@ -30,13 +28,14 @@ public class BlockGhostView : MonoBehaviour
         cg.interactable   = false;
 
         var occupied = card.GetOccupiedCells();
-        tiles = new Image[occupied.Length];
+        tiles      = new Image[occupied.Length];
+        baseColors = new Color[occupied.Length];
 
-        float tileSize = cellSize - 6f; // 셀보다 약간 작게 (여백 표현)
+        float tileSize = cellSize - 6f;
 
         for (int i = 0; i < occupied.Length; i++)
         {
-            var (col, row, _) = occupied[i];
+            var (col, row, symbol) = occupied[i];
 
             var tileGo = new GameObject($"Tile_{col}_{row}", typeof(RectTransform), typeof(Image));
             tileGo.transform.SetParent(transform, false);
@@ -45,7 +44,8 @@ public class BlockGhostView : MonoBehaviour
             rt.sizeDelta        = Vector2.one * tileSize;
             rt.anchoredPosition = new Vector2(col * cellSize, -row * cellSize);
 
-            tiles[i] = tileGo.GetComponent<Image>();
+            tiles[i]      = tileGo.GetComponent<Image>();
+            baseColors[i] = SymbolVisuals.GetColor(symbol);
         }
 
         SetValidity(true);
@@ -61,11 +61,13 @@ public class BlockGhostView : MonoBehaviour
         transform.position = screenPos;
     }
 
-    /// <summary> 배치 가능 여부에 따라 타일 색을 바꾼다. </summary>
+    /// <summary>
+    /// 배치 가능 여부에 따라 타일 색을 바꾼다.
+    /// 가능: 심볼 원색 (반투명) / 불가: 빨간 오버레이
+    /// </summary>
     public void SetValidity(bool canPlace)
     {
-        Color color = canPlace ? validColor : invalidColor;
-        foreach (var tile in tiles)
-            tile.color = color;
+        for (int i = 0; i < tiles.Length; i++)
+            tiles[i].color = new Color(baseColors[i].r, baseColors[i].g, baseColors[i].b, 0.70f);
     }
 }

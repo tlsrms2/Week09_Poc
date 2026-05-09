@@ -115,10 +115,25 @@ public class GridManager : MonoBehaviour
     // ═══════════════════════════════════════════
 
     /// <summary>
+    /// 현재 배치된 블록들의 예상 데미지/방어도를 반환한다. 이벤트는 발행하지 않는다.
+    /// UI 미리보기에서 블록을 놓을 때마다 호출한다.
+    /// </summary>
+    public (int damage, int defense) GetPreview()
+    {
+        return Calculate();
+    }
+
+    /// <summary>
     /// 배치된 모든 블록을 순회해 최종 데미지/방어도를 계산하고 이벤트로 발행한다.
-    /// 겹친 셀 수만큼 해당 카드 배율 +1.
     /// </summary>
     private void CalculateAndRaiseResolution()
+    {
+        var (totalDamage, totalDefense) = Calculate();
+        Debug.Log($"[GridManager] 결산 — 공격 {totalDamage}, 방어 {totalDefense}");
+        GameEvents.RaiseResolutionResult(totalDamage, totalDefense);
+    }
+
+    private (int damage, int defense) Calculate()
     {
         int totalDamage = 0;
         int totalDefense = 0;
@@ -132,23 +147,19 @@ public class GridManager : MonoBehaviour
                 int gx = pb.originX + col;
                 int gy = pb.originY + row;
 
-                if (overlapCount[gx, gy] > 1)
-                    overlapBonus++;
+                overlapBonus += overlapCount[gx, gy] - 1;
             }
 
-            int multiplier = 1 + overlapBonus;
+            int multiplier    = 1 + overlapBonus;
             int effectivePower = pb.card.BasePower * multiplier;
 
             if (pb.card.Type == CardType.Attack)
-                totalDamage += effectivePower;
+                totalDamage  += effectivePower;
             else
                 totalDefense += effectivePower;
-
-            Debug.Log($"[GridManager] {pb.card.CardName} — 기본 {pb.card.BasePower} × {multiplier}배 = {effectivePower}");
         }
 
-        Debug.Log($"[GridManager] 결산 — 공격 {totalDamage}, 방어 {totalDefense}");
-        GameEvents.RaiseResolutionResult(totalDamage, totalDefense);
+        return (totalDamage, totalDefense);
     }
 
     private void ClearGrid()
