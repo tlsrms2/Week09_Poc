@@ -130,6 +130,11 @@ public class GridManager : MonoBehaviour
     {
         var (totalDamage, totalDefense) = Calculate();
         Debug.Log($"[GridManager] 결산 — 공격 {totalDamage}, 방어 {totalDefense}");
+        
+        // 결산(데미지/방어도 계산)이 끝났으므로 데이터를 초기화한다.
+        ClearGrid();
+
+        // 계산된 결과를 발행한다. (이때 UI가 갱신되면 빈 그리드가 렌더링됨)
         GameEvents.RaiseResolutionResult(totalDamage, totalDefense);
     }
 

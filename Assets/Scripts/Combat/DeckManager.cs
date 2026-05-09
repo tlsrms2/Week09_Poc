@@ -35,6 +35,21 @@ public class DeckManager : MonoBehaviour
     public int DiscardPileCount => discardPile.Count;
     public int DrawCountPerTurn => drawCountPerTurn;
 
+    private void OnEnable()
+    {
+        GameEvents.OnBlockPlaced += HandleBlockPlaced;
+    }
+
+    private void OnDisable()
+    {
+        GameEvents.OnBlockPlaced -= HandleBlockPlaced;
+    }
+
+    private void HandleBlockPlaced(CardData card, int x, int y)
+    {
+        UseCard(card);
+    }
+
     /// <summary>
     /// 덱을 초기화하고 셔플한다. 전투 시작 시 CombatManager가 호출한다.
     /// </summary>

@@ -17,8 +17,9 @@ public class CardView : MonoBehaviour,
 {
     [Header("Inspector 직접 설정 (테스트용)")]
     [SerializeField] private CardData initialCardData;
-    [SerializeField] private GridView gridView;
-    [SerializeField] private GridManager gridManager;
+
+    private GridView gridView;
+    private GridManager gridManager;
 
     [Header("UI 참조")]
     [SerializeField] private TextMeshProUGUI cardNameText;
@@ -44,20 +45,22 @@ public class CardView : MonoBehaviour,
     {
         rootCanvas  = GetComponentInParent<Canvas>().rootCanvas;
         canvasGroup = GetComponent<CanvasGroup>();
+
+        // 프리팹 인스턴스화를 위해 런타임에 동적으로 매니저와 뷰를 탐색
+        gridView = FindAnyObjectByType<GridView>();
+        gridManager = FindAnyObjectByType<GridManager>();
     }
 
     private void Start()
     {
         // Inspector에 SO가 연결된 경우 자동 초기화
         if (initialCardData != null)
-            Setup(initialCardData, gridView, gridManager);
+            Setup(initialCardData);
     }
 
-    public void Setup(CardData data, GridView grid, GridManager manager)
+    public void Setup(CardData data)
     {
-        cardData    = data;
-        gridView    = grid;
-        gridManager = manager;
+        cardData = data;
 
         if (cardNameText != null) cardNameText.text = data.CardName;
         if (powerText != null)    powerText.text    = data.BasePower.ToString();

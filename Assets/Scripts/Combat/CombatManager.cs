@@ -104,8 +104,8 @@ public class CombatManager : MonoBehaviour
         turnCount++;
         player.ResetDefense();
 
-        deckManager.DrawCards();
         GameEvents.RaiseDrawPhaseStarted(deckManager.DrawCountPerTurn);
+        deckManager.DrawCards();
 
         // 드로우 후 바로 배치 페이즈로 전이
         TransitionTo(CombatState.Placement);

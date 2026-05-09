@@ -11,7 +11,7 @@ public class CombatUnit : MonoBehaviour
 
     [SerializeField] private int maxHp = 50;
 
-    private int currentHp;
+    [SerializeField] private int currentHp;
     private int defense;
 
     // ── Public Properties ──

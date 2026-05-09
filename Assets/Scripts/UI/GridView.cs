@@ -34,12 +34,14 @@ public class GridView : MonoBehaviour
     {
         GameEvents.OnBlockPlaced    += HandleBlockPlaced;
         GameEvents.OnDrawPhaseStarted += HandleDrawPhaseStarted;
+        GameEvents.OnResolutionResult += HandleResolutionResult;
     }
 
     private void OnDisable()
     {
         GameEvents.OnBlockPlaced    -= HandleBlockPlaced;
         GameEvents.OnDrawPhaseStarted -= HandleDrawPhaseStarted;
+        GameEvents.OnResolutionResult -= HandleResolutionResult;
     }
 
     // ═══════════════════════════════════════════
@@ -118,4 +120,5 @@ public class GridView : MonoBehaviour
 
     private void HandleBlockPlaced(CardData _, int x, int y) => RefreshGrid();
     private void HandleDrawPhaseStarted(int _) => RefreshGrid();
+    private void HandleResolutionResult(int _, int __) => RefreshGrid();
 }
