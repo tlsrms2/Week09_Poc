@@ -24,9 +24,11 @@ namespace Cyg.UI
         [SerializeField, Range(0f, 1f)] private float pushFalloff = 0.55f;
         [SerializeField, Min(1f)] private float animationSpeed = 16f;
 
-        [Header("Layering")]
-        [SerializeField] private int normalSortingOrder = 1;
-        [SerializeField] private int hoverSortingOrder = 20;
+        [Header("Fan Layout")]
+        [SerializeField] private bool useFanLayout = true;
+        [SerializeField, Min(0f)] private float fanEdgeDrop = 28f;
+        [SerializeField, Min(0f)] private float fanMaxRotation = 8f;
+        [SerializeField, Min(0f)] private float hoverRotationEase = 0.85f;
 
         private readonly List<CardVisual> cards = new();
         private Canvas rootCanvas;
@@ -90,16 +92,7 @@ namespace Cyg.UI
                     continue;
                 }
 
-                Canvas cardCanvas = card.GetComponent<Canvas>();
-                if (cardCanvas == null)
-                {
-                    cardCanvas = card.gameObject.AddComponent<Canvas>();
-                }
-
-                cardCanvas.overrideSorting = true;
-                cardCanvas.sortingOrder = normalSortingOrder;
-
-                cards.Add(new CardVisual(card, cardCanvas));
+                cards.Add(new CardVisual(card));
             }
         }
 
@@ -207,9 +200,10 @@ namespace Cyg.UI
             for (int i = 0; i < cards.Count; i++)
             {
                 CardVisual card = cards[i];
-                Vector2 targetPosition = card.BasePosition;
+                float fanAmount = GetFanAmount(i);
+                Vector2 targetPosition = card.BasePosition + GetFanOffset(fanAmount);
                 Vector3 targetScale = card.BaseScale;
-                int sortingOrder = normalSortingOrder;
+                Quaternion targetRotation = GetFanRotation(card.BaseRotation, fanAmount);
 
                 if (hoveredIndex >= 0)
                 {
@@ -218,7 +212,7 @@ namespace Cyg.UI
                     {
                         targetPosition += Vector2.up * hoverLift;
                         targetScale = card.BaseScale * hoverScale;
-                        sortingOrder = hoverSortingOrder;
+                        targetRotation = Quaternion.Slerp(targetRotation, card.BaseRotation, hoverRotationEase);
                     }
                     else
                     {
@@ -228,10 +222,40 @@ namespace Cyg.UI
                     }
                 }
 
-                card.Canvas.sortingOrder = sortingOrder;
                 card.RectTransform.anchoredPosition = Vector2.Lerp(card.RectTransform.anchoredPosition, targetPosition, t);
                 card.RectTransform.localScale = Vector3.Lerp(card.RectTransform.localScale, targetScale, t);
+                card.RectTransform.localRotation = Quaternion.Slerp(card.RectTransform.localRotation, targetRotation, t);
             }
+        }
+
+        private float GetFanAmount(int index)
+        {
+            if (!useFanLayout || cards.Count <= 1)
+            {
+                return 0f;
+            }
+
+            return Mathf.Lerp(-1f, 1f, index / (float)(cards.Count - 1));
+        }
+
+        private Vector2 GetFanOffset(float fanAmount)
+        {
+            if (!useFanLayout)
+            {
+                return Vector2.zero;
+            }
+
+            return Vector2.down * (fanEdgeDrop * fanAmount * fanAmount);
+        }
+
+        private Quaternion GetFanRotation(Quaternion baseRotation, float fanAmount)
+        {
+            if (!useFanLayout)
+            {
+                return baseRotation;
+            }
+
+            return baseRotation * Quaternion.Euler(0f, 0f, -fanAmount * fanMaxRotation);
         }
 
         private void SetCardInfoPanelVisible(bool shouldShow)
@@ -270,18 +294,18 @@ namespace Cyg.UI
 
         private readonly struct CardVisual
         {
-            public CardVisual(RectTransform rectTransform, Canvas canvas)
+            public CardVisual(RectTransform rectTransform)
             {
                 RectTransform = rectTransform;
-                Canvas = canvas;
                 BasePosition = rectTransform.anchoredPosition;
                 BaseScale = rectTransform.localScale;
+                BaseRotation = rectTransform.localRotation;
             }
 
             public RectTransform RectTransform { get; }
-            public Canvas Canvas { get; }
             public Vector2 BasePosition { get; }
             public Vector3 BaseScale { get; }
+            public Quaternion BaseRotation { get; }
         }
     }
 }
