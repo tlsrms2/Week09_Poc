@@ -2,7 +2,7 @@ using UnityEngine;
 
 /// <summary>
 /// 카드(스킬) 한 장의 정적 데이터를 정의하는 ScriptableObject.
-/// 블록 형태 데이터(<see cref="BlockData"/>)와 전투 속성(위력, 타입)을 조합한다.
+/// 블록 형태 데이터와 전투 속성(위력, 타입)을 모두 포함하여 단일 파일로 관리합니다.
 /// </summary>
 [CreateAssetMenu(fileName = "NewCardData", menuName = "DeckBuilder/Card Data")]
 public class CardData : ScriptableObject
@@ -15,10 +15,6 @@ public class CardData : ScriptableObject
     [TextArea(2, 4)]
     [SerializeField] private string description = "";
 
-    [Header("블록 형태")]
-    [Tooltip("이 카드에 연결된 블록 형태 데이터")]
-    [SerializeField] private BlockData blockData;
-
     [Header("전투 속성")]
     [Tooltip("카드 효과 유형 (공격 / 방어)")]
     [SerializeField] private CardType cardType = CardType.Attack;
@@ -27,10 +23,82 @@ public class CardData : ScriptableObject
     [Min(0)]
     [SerializeField] private int basePower = 5;
 
+    [HideInInspector]
+    [SerializeField] private int width = 1;
+
+    [HideInInspector]
+    [SerializeField] private int height = 1;
+
+    [HideInInspector]
+    [SerializeField] private SymbolType[] symbols;
+
     // ── Public Properties ──
     public string CardName => cardName;
     public string Description => description;
-    public BlockData BlockData => blockData;
     public CardType Type => cardType;
     public int BasePower => basePower;
+    
+    public int Width => width;
+    public int Height => height;
+
+    /// <summary>
+    /// 특정 좌표(col, row)의 문양을 반환한다.
+    /// 범위를 벗어나면 <see cref="SymbolType.None"/>을 반환한다.
+    /// </summary>
+    public SymbolType GetSymbol(int col, int row)
+    {
+        if (col < 0 || col >= width || row < 0 || row >= height)
+            return SymbolType.None;
+
+        int index = row * width + col;
+        if (index < 0 || index >= symbols?.Length)
+            return SymbolType.None;
+
+        return symbols[index];
+    }
+
+    /// <summary>
+    /// 블록이 실제로 차지하는 칸(Symbol != None)의 좌표 목록을 반환한다.
+    /// 배치 검증이나 겹치기 판별 시 반복 순회에 사용된다.
+    /// </summary>
+    public (int col, int row, SymbolType symbol)[] GetOccupiedCells()
+    {
+        if (symbols == null) return System.Array.Empty<(int, int, SymbolType)>();
+
+        // 일단 최대 크기로 할당 후, 실제 개수만 복사
+        var buffer = new (int, int, SymbolType)[width * height];
+        int count = 0;
+
+        for (int r = 0; r < height; r++)
+        {
+            for (int c = 0; c < width; c++)
+            {
+                SymbolType sym = GetSymbol(c, r);
+                if (sym != SymbolType.None)
+                {
+                    buffer[count++] = (c, r, sym);
+                }
+            }
+        }
+
+        var result = new (int, int, SymbolType)[count];
+        System.Array.Copy(buffer, result, count);
+        return result;
+    }
+
+#if UNITY_EDITOR
+    private void OnValidate()
+    {
+        if (width < 1) width = 1;
+        if (height < 1) height = 1;
+
+        int requiredLength = width * height;
+        if (symbols == null || symbols.Length != requiredLength)
+        {
+            var old = symbols ?? System.Array.Empty<SymbolType>();
+            symbols = new SymbolType[requiredLength];
+            System.Array.Copy(old, symbols, Mathf.Min(old.Length, requiredLength));
+        }
+    }
+#endif
 }
