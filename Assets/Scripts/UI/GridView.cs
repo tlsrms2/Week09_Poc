@@ -74,7 +74,7 @@ public class GridView : MonoBehaviour
 
         bool canPlace = gridManager.CanPlaceBlock(card, originX, originY);
 
-        foreach (var (col, row, _) in card.GetOccupiedCells())
+        foreach (var (col, row, symbol) in card.GetOccupiedCells())
         {
             int gx = originX + col;
             int gy = originY + row;
@@ -82,7 +82,9 @@ public class GridView : MonoBehaviour
             if (gx < 0 || gx >= GridManager.GridSize || gy < 0 || gy >= GridManager.GridSize)
                 continue;
 
-            cells[gx, gy].SetState(canPlace ? CellHighlight.Valid : CellHighlight.Invalid);
+            SymbolType currentSymbol = gridManager.GetCell(gx, gy);
+            int currentOverlapCount = currentSymbol == symbol ? gridManager.GetOverlapCount(gx, gy) : 0;
+            cells[gx, gy].SetPreview(symbol, canPlace, currentOverlapCount);
         }
     }
 

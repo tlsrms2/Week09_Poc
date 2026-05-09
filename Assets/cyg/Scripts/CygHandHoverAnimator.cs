@@ -1,5 +1,7 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
@@ -31,46 +33,102 @@ namespace Cyg.UI
         [SerializeField, Min(0f)] private float hoverRotationEase = 0.85f;
 
         private readonly List<CardVisual> cards = new();
+        private readonly HashSet<Transform> inactiveCards = new();
         private Canvas rootCanvas;
         private Camera eventCamera;
         private int hoveredIndex = -1;
         private bool cardInfoPanelVisible;
         private float cardInfoHideTimer;
+        private int cachedChildCount = -1;
+        private Coroutine refreshRoutine;
 
         private void Awake()
         {
-            RefreshCards();
+            CacheCanvasReferences();
         }
 
         private void OnEnable()
         {
-            RefreshCards();
+            RequestRefreshCards();
         }
 
         private void OnDisable()
         {
+            if (refreshRoutine != null)
+            {
+                StopCoroutine(refreshRoutine);
+                refreshRoutine = null;
+            }
+
             hoveredIndex = -1;
             SetCardInfoPanelVisible(false);
         }
 
         private void Update()
         {
-            if (cards.Count == 0)
+            if (slotRoot != null && (cards.Count == 0 || cachedChildCount != slotRoot.childCount))
             {
-                RefreshCards();
+                RequestRefreshCards();
             }
 
-            UpdateHoveredIndex();
-            AnimateCards();
-            SetCardInfoPanelVisible(showCardInfoPanelOnHover && hoveredIndex >= 0);
+            if (HasInvalidCardReferences())
+            {
+                RequestRefreshCards();
+                return;
+            }
+
+            bool isDraggingCard = IsAnyCardDragging();
+            if (isDraggingCard)
+            {
+                hoveredIndex = -1;
+            }
+            else
+            {
+                UpdateHoveredIndex();
+            }
+
+            AnimateCards(isDraggingCard);
+            SetCardInfoPanelVisible(showCardInfoPanelOnHover && (hoveredIndex >= 0 || isDraggingCard));
         }
 
         public void RefreshCards()
         {
-            rootCanvas = GetComponentInParent<Canvas>();
-            eventCamera = rootCanvas != null && rootCanvas.renderMode != RenderMode.ScreenSpaceOverlay
-                ? rootCanvas.worldCamera
-                : null;
+            RequestRefreshCards();
+        }
+
+        private void RequestRefreshCards()
+        {
+            if (!isActiveAndEnabled)
+            {
+                RefreshCardsNow();
+                return;
+            }
+
+            if (refreshRoutine != null)
+            {
+                return;
+            }
+
+            refreshRoutine = StartCoroutine(RefreshCardsAfterLayout());
+        }
+
+        private IEnumerator RefreshCardsAfterLayout()
+        {
+            yield return null;
+
+            Canvas.ForceUpdateCanvases();
+            if (slotRoot is RectTransform slotRootRect)
+            {
+                LayoutRebuilder.ForceRebuildLayoutImmediate(slotRootRect);
+            }
+
+            RefreshCardsNow();
+            refreshRoutine = null;
+        }
+
+        private void RefreshCardsNow()
+        {
+            CacheCanvasReferences();
 
             if (slotRoot == null)
             {
@@ -83,6 +141,7 @@ namespace Cyg.UI
             }
 
             cards.Clear();
+            cachedChildCount = slotRoot.childCount;
 
             for (int i = 0; i < slotRoot.childCount; i++)
             {
@@ -96,9 +155,73 @@ namespace Cyg.UI
             }
         }
 
+        private void CacheCanvasReferences()
+        {
+            rootCanvas = GetComponentInParent<Canvas>();
+            eventCamera = rootCanvas != null && rootCanvas.renderMode != RenderMode.ScreenSpaceOverlay
+                ? rootCanvas.worldCamera
+                : null;
+        }
+
         public void ClearHover()
         {
             hoveredIndex = -1;
+        }
+
+        public void MarkCardInactive(GameObject cardObject)
+        {
+            if (cardObject != null)
+            {
+                MarkCardInactive(cardObject.transform);
+            }
+        }
+
+        public void MarkCardInactive(Transform cardTransform)
+        {
+            if (cardTransform == null)
+            {
+                return;
+            }
+
+            inactiveCards.Add(cardTransform);
+
+            if (cardTransform.TryGetComponent(out CanvasGroup canvasGroup))
+            {
+                canvasGroup.alpha = 0.35f;
+                canvasGroup.blocksRaycasts = false;
+                canvasGroup.interactable = false;
+            }
+
+            cardTransform.gameObject.SetActive(true);
+            ClearHover();
+            RequestRefreshCards();
+        }
+
+        public void RestoreCardActive(GameObject cardObject)
+        {
+            if (cardObject != null)
+            {
+                RestoreCardActive(cardObject.transform);
+            }
+        }
+
+        public void RestoreCardActive(Transform cardTransform)
+        {
+            if (cardTransform == null)
+            {
+                return;
+            }
+
+            inactiveCards.Remove(cardTransform);
+
+            if (cardTransform.TryGetComponent(out CanvasGroup canvasGroup))
+            {
+                canvasGroup.alpha = 1f;
+                canvasGroup.blocksRaycasts = true;
+                canvasGroup.interactable = true;
+            }
+
+            RequestRefreshCards();
         }
 
         public void SetCardInfoPanel(GameObject panel)
@@ -110,6 +233,11 @@ namespace Cyg.UI
 
         private RectTransform FindCardVisual(Transform slot)
         {
+            if (slot.name.StartsWith(cardNamePrefix) || slot.name.StartsWith("PF_Card") || slot.GetComponent<CanvasGroup>() != null)
+            {
+                return slot as RectTransform;
+            }
+
             for (int i = 0; i < slot.childCount; i++)
             {
                 Transform child = slot.GetChild(i);
@@ -152,7 +280,7 @@ namespace Cyg.UI
             for (int i = 0; i < cards.Count; i++)
             {
                 RectTransform rectTransform = cards[i].RectTransform;
-                if (!rectTransform.gameObject.activeInHierarchy)
+                if (!IsHoverTargetAvailable(rectTransform) || IsMarkedInactive(rectTransform))
                 {
                     continue;
                 }
@@ -193,19 +321,24 @@ namespace Cyg.UI
 #endif
         }
 
-        private void AnimateCards()
+        private void AnimateCards(bool suppressHover)
         {
             float t = 1f - Mathf.Exp(-animationSpeed * Time.unscaledDeltaTime);
 
             for (int i = 0; i < cards.Count; i++)
             {
                 CardVisual card = cards[i];
+                if (!IsHoverTargetAvailable(card.RectTransform))
+                {
+                    continue;
+                }
+
                 float fanAmount = GetFanAmount(i);
                 Vector2 targetPosition = card.BasePosition + GetFanOffset(fanAmount);
                 Vector3 targetScale = card.BaseScale;
                 Quaternion targetRotation = GetFanRotation(card.BaseRotation, fanAmount);
 
-                if (hoveredIndex >= 0)
+                if (!suppressHover && hoveredIndex >= 0)
                 {
                     int distanceFromHover = i - hoveredIndex;
                     if (distanceFromHover == 0)
@@ -226,6 +359,49 @@ namespace Cyg.UI
                 card.RectTransform.localScale = Vector3.Lerp(card.RectTransform.localScale, targetScale, t);
                 card.RectTransform.localRotation = Quaternion.Slerp(card.RectTransform.localRotation, targetRotation, t);
             }
+        }
+
+        private bool HasInvalidCardReferences()
+        {
+            for (int i = 0; i < cards.Count; i++)
+            {
+                if (cards[i].RectTransform == null)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool IsAnyCardDragging()
+        {
+            for (int i = 0; i < cards.Count; i++)
+            {
+                RectTransform rectTransform = cards[i].RectTransform;
+                if (!IsHoverTargetAvailable(rectTransform) || IsMarkedInactive(rectTransform))
+                {
+                    continue;
+                }
+
+                CanvasGroup canvasGroup = rectTransform.GetComponent<CanvasGroup>();
+                if (canvasGroup != null && (!canvasGroup.blocksRaycasts || canvasGroup.alpha < 0.99f))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool IsHoverTargetAvailable(RectTransform rectTransform)
+        {
+            return rectTransform != null && rectTransform.gameObject.activeInHierarchy;
+        }
+
+        private bool IsMarkedInactive(RectTransform rectTransform)
+        {
+            return rectTransform != null && inactiveCards.Contains(rectTransform);
         }
 
         private float GetFanAmount(int index)
