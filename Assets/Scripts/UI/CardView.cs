@@ -77,11 +77,11 @@ public class CardView : MonoBehaviour,
 
         var (gx, gy) = gridView.ScreenToGridCoords(eventData.position);
 
-        if (gx >= 0 && cardData.BlockData != null)
+        if (gx >= 0)
         {
-            bool canPlace = gridManager.CanPlaceBlock(cardData.BlockData, gx, gy);
+            bool canPlace = gridManager.CanPlaceBlock(cardData, gx, gy);
             ghost.SetValidity(canPlace);
-            gridView.ShowPreview(cardData.BlockData, gx, gy);
+            gridView.ShowPreview(cardData, gx, gy);
         }
         else
         {
@@ -116,13 +116,13 @@ public class CardView : MonoBehaviour,
 
     private void SpawnGhost(Vector2 startPos)
     {
-        if (cardData.BlockData == null) return;
+        if (cardData.GetOccupiedCells().Length == 0) return;
 
         var go = new GameObject("BlockGhost", typeof(RectTransform), typeof(CanvasGroup), typeof(BlockGhostView));
         go.transform.SetParent(rootCanvas.transform, false);
 
         ghost = go.GetComponent<BlockGhostView>();
-        ghost.Setup(cardData.BlockData, gridView.CellSize);
+        ghost.Setup(cardData, gridView.CellSize);
         ghost.UpdatePosition(startPos);
     }
 

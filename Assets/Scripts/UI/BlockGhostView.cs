@@ -20,16 +20,16 @@ public class BlockGhostView : MonoBehaviour
     /// <summary>
     /// 블록 형태에 맞게 타일을 생성한다.
     /// </summary>
-    /// <param name="block">블록 형태 데이터</param>
+    /// <param name="card">카드 데이터 (블록 형태 포함)</param>
     /// <param name="cellSize">그리드 셀 한 칸의 픽셀 크기</param>
-    public void Setup(BlockData block, float cellSize)
+    public void Setup(CardData card, float cellSize)
     {
         // 레이캐스트를 통과시켜 그리드 셀 감지가 막히지 않도록
         var cg = GetComponent<CanvasGroup>();
         cg.blocksRaycasts = false;
         cg.interactable   = false;
 
-        var occupied = block.GetOccupiedCells();
+        var occupied = card.GetOccupiedCells();
         tiles = new Image[occupied.Length];
 
         float tileSize = cellSize - 6f; // 셀보다 약간 작게 (여백 표현)

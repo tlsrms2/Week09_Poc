@@ -64,11 +64,11 @@ public class GridManager : MonoBehaviour
     /// <param name="block">배치하려는 블록 형태 데이터</param>
     /// <param name="originX">그리드 기준 좌측 열 인덱스 (0~2)</param>
     /// <param name="originY">그리드 기준 하단 행 인덱스 (0~2)</param>
-    public bool CanPlaceBlock(BlockData block, int originX, int originY)
+    public bool CanPlaceBlock(CardData card, int originX, int originY)
     {
-        if (block == null) return false;
+        if (card == null) return false;
 
-        foreach (var (col, row, symbol) in block.GetOccupiedCells())
+        foreach (var (col, row, symbol) in card.GetOccupiedCells())
         {
             int gx = originX + col;
             int gy = originY + row;
@@ -91,10 +91,10 @@ public class GridManager : MonoBehaviour
     /// </summary>
     public bool TryPlaceBlock(CardData card, int originX, int originY)
     {
-        if (card == null || card.BlockData == null) return false;
-        if (!CanPlaceBlock(card.BlockData, originX, originY)) return false;
+        if (card == null) return false;
+        if (!CanPlaceBlock(card, originX, originY)) return false;
 
-        foreach (var (col, row, symbol) in card.BlockData.GetOccupiedCells())
+        foreach (var (col, row, symbol) in card.GetOccupiedCells())
         {
             int gx = originX + col;
             int gy = originY + row;
@@ -127,7 +127,7 @@ public class GridManager : MonoBehaviour
         {
             int overlapBonus = 0;
 
-            foreach (var (col, row, _) in pb.card.BlockData.GetOccupiedCells())
+            foreach (var (col, row, _) in pb.card.GetOccupiedCells())
             {
                 int gx = pb.originX + col;
                 int gy = pb.originY + row;
