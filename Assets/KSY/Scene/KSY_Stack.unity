@@ -1489,6 +1489,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 805b21edbcac20447aa8e2e9cb1f22dc, type: 2}
   - {fileID: 11400000, guid: 805b21edbcac20447aa8e2e9cb1f22dc, type: 2}
   - {fileID: 11400000, guid: 805b21edbcac20447aa8e2e9cb1f22dc, type: 2}
+  - {fileID: 11400000, guid: 805b21edbcac20447aa8e2e9cb1f22dc, type: 2}
   drawCountPerTurn: 6
 --- !u!1 &649544377
 GameObject:

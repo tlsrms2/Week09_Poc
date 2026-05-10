@@ -27,7 +27,6 @@ public class GridManager : MonoBehaviour
     {
         public CardData card;
         public int originX, originY;
-        public bool overlapEffectFired;  // 이 블록의 겹침 효과가 이미 발동됐으면 true
     }
 
     // ── Public Read-Only ──
@@ -130,29 +129,15 @@ public class GridManager : MonoBehaviour
             overlapCount[gx, gy]++;
         }
 
-        // 3. 겹쳐진 기존 블록들의 겹침 효과 발동 (미발동 블록만)
+        // 3. 겹쳐진 기존 블록들의 겹침 효과 발동
         foreach (int idx in overlappedIndices)
-        {
-            if (!placedBlocks[idx].overlapEffectFired)
-            {
-                TriggerOverlapEffects(placedBlocks[idx].card);
-                var pb = placedBlocks[idx];
-                pb.overlapEffectFired = true;
-                placedBlocks[idx] = pb;
-            }
-        }
+            TriggerOverlapEffects(placedBlocks[idx].card);
 
         // 4. 새로 놓인 카드의 겹침 효과 발동
         if (hadOverlap)
             TriggerOverlapEffects(card);
 
-        placedBlocks.Add(new PlacedBlock
-        {
-            card = card,
-            originX = originX,
-            originY = originY,
-            overlapEffectFired = hadOverlap
-        });
+        placedBlocks.Add(new PlacedBlock { card = card, originX = originX, originY = originY });
         GameEvents.RaiseBlockPlaced(card, originX, originY);
 
         Debug.Log($"[GridManager] {card.CardName} 배치 완료 ({originX}, {originY})");
