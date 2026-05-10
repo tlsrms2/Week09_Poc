@@ -10,18 +10,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5314c3e4d98d2a841b3148bac9fcbfa4, type: 3}
-  m_Name: "[1 x 2] \uBC14\uB78C"
+  m_Name: "\uBC29\uC5B4 \uC131\uC7A5\uD615"
   m_EditorClassIdentifier: Assembly-CSharp::CardData
-  cardName: "[1 x 2] \uBC14\uB78C"
-  description: "\uC801\uC5D0\uAC8C 5\uC758 \uD53C\uD574\uB97C \uC785\uD799\uB2C8\uB2E4
-    2\uB4DC\uB85C\uC6B0"
+  cardName: "\uBC29\uC5B4 \uC131\uC7A5\uD615"
+  description: "\uD134 \uC885\uB8CC \uC2DC \uBC29\uC5B4\uB3C4\uB97C 0 \uC5BB\uC2B5\uB2C8\uB2E4."
   effects:
-  - effectType: 4
-    power: 2
-  - effectType: 0
+  - effectType: 1
+    power: 0
+  overlapEffects:
+  - effectType: 11
     power: 5
-  overlapEffects: []
-  overlapDescription: 
+  overlapDescription: "\uACB0\uC0B0 \uBC29\uC5B4\uB3C4\uAC00 5 \uC99D\uAC00\uD569\uB2C8\uB2E4."
   width: 1
-  height: 2
-  symbols: 0100000001000000
+  height: 1
+  symbols: 01000000

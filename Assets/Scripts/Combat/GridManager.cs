@@ -19,6 +19,12 @@ public class GridManager : MonoBehaviour
     {
         public CardData card;
         public int originX, originY;
+        /// <summary>BoostResolutionDamage 겹침 효과로 쌓인 추가 피해량</summary>
+        public int bonusDamage;
+        /// <summary>BoostResolutionDefense 겹침 효과로 쌓인 추가 방어도</summary>
+        public int bonusDefense;
+        /// <summary>DoubleOverlapEffect 적용 여부 (중첩 불가)</summary>
+        public bool doubleOverlapApplied;
     }
 
     // ── Public Read-Only ──
@@ -108,15 +114,30 @@ public class GridManager : MonoBehaviour
             overlapCount[gx, gy]++;
         }
 
+        // 새로 추가될 블록의 초기 상태
+        var newBlock = new PlacedBlock { card = card, originX = originX, originY = originY };
+
         // 3. 겹쳐진 기존 블록들의 겹침 효과 발동
         foreach (int idx in overlappedIndices)
-            TriggerOverlapEffects(placedBlocks[idx].card);
+        {
+            var targetBlock = placedBlocks[idx];
+            ProcessOverlapEffects(targetBlock.card, card, ref targetBlock, ref newBlock);
+            placedBlocks[idx] = targetBlock;  // struct이므로 재할당
+        }
 
         // 4. 새로 놓인 카드의 겹침 효과 발동
         if (hadOverlap)
-            TriggerOverlapEffects(card);
+        {
+            // newBlock의 겹침 효과는 아래에 깔린 블록들에 영향을 줌
+            foreach (int idx in overlappedIndices)
+            {
+                var targetBlock = placedBlocks[idx];
+                ProcessOverlapEffects(card, targetBlock.card, ref newBlock, ref targetBlock);
+                placedBlocks[idx] = targetBlock;
+            }
+        }
 
-        placedBlocks.Add(new PlacedBlock { card = card, originX = originX, originY = originY });
+        placedBlocks.Add(newBlock);
         GameEvents.RaiseBlockPlaced(card, originX, originY);
 
         Debug.Log($"[GridManager] {card.CardName} 배치 완료 ({originX}, {originY})");
@@ -143,7 +164,11 @@ public class GridManager : MonoBehaviour
             foreach (var effect in pb.card.Effects)
                 ApplyEffect(ref result, effect);
 
-            Debug.Log($"[GridManager] {pb.card.CardName} 결산 — 공격 {result.damage}, 방어 {result.defense}, 회복 {result.heal}, 드로우 +{result.draw}");
+            // BoostResolution 겹침 효과로 누적된 보너스 적용
+            result.damage  += pb.bonusDamage;
+            result.defense += pb.bonusDefense;
+
+            Debug.Log($"[GridManager] {pb.card.CardName} 결산 — 공격 {result.damage}(+{pb.bonusDamage}보너스), 방어 {result.defense}(+{pb.bonusDefense}보너스), 회복 {result.heal}, 드로우 +{result.draw}");
             GameEvents.RaiseResolutionResult(result);
 
             yield return new WaitForSeconds(blockResolveDelay);
@@ -153,15 +178,104 @@ public class GridManager : MonoBehaviour
         GameEvents.RaiseResolutionComplete();
     }
 
-    private void TriggerOverlapEffects(CardData card)
+    /// <summary>
+    /// source 카드가 target 카드 위에 겹쳐졌을 때 source의 겹치기 효과를 처리한다.
+    /// 즉시 발동 효과(Instant)는 GameEvents로 방출하고,
+    /// 결산 보너스 효과(Boost)는 sourceBlock/targetBlock 구조체에 기록한다.
+    /// </summary>
+    private void ProcessOverlapEffects(
+        CardData sourceCard, CardData targetCard,
+        ref PlacedBlock sourceBlock, ref PlacedBlock targetBlock)
     {
-        var result = new ResolutionResult();
-        foreach (var effect in card.OverlapEffects)
-            ApplyEffect(ref result, effect);
+        var instantResult = new ResolutionResult();
+        bool hasInstant = false;
 
-        Debug.Log($"[GridManager] {card.CardName} 겹침 효과 즉시 발동 — 공격 {result.damage}, 방어 {result.defense}, 회복 {result.heal}, 드로우 +{result.draw}");
-        GameEvents.RaiseOverlapEffectTriggered(result);
+        foreach (var effect in sourceCard.OverlapEffects)
+        {
+            switch (effect.effectType)
+            {
+                // ── 즉시 발동 효과 (기존) ──
+                case CardType.Attack:
+                case CardType.Drain:
+                    ApplyEffect(ref instantResult, effect);
+                    hasInstant = true;
+                    break;
+                case CardType.Defense:
+                case CardType.Heal:
+                case CardType.DrawNow:
+                    ApplyEffect(ref instantResult, effect);
+                    hasInstant = true;
+                    break;
+
+                // ── 겹친 공격 카드의 결산 피해량 증폭 ──
+                case CardType.OverlapBoostAttack:
+                    if (targetCard.Type == CardType.Attack || targetCard.Type == CardType.Drain)
+                    {
+                        targetBlock.bonusDamage += effect.power;
+                        Debug.Log($"[GridManager] {sourceCard.CardName} → {targetCard.CardName} 결산 피해 +{effect.power}");
+                    }
+                    break;
+
+                // ── 겹친 방어 카드의 결산 방어도 증폭 ──
+                case CardType.OverlapBoostDefense:
+                    if (targetCard.Type == CardType.Defense)
+                    {
+                        targetBlock.bonusDefense += effect.power;
+                        Debug.Log($"[GridManager] {sourceCard.CardName} → {targetCard.CardName} 결산 방어도 +{effect.power}");
+                    }
+                    break;
+
+                // ── 겹친 카드의 겹치기 효과 두 번 발동 (중첩 불가) ──
+                case CardType.DoubleOverlapEffect:
+                    if (!targetBlock.doubleOverlapApplied)
+                    {
+                        targetBlock.doubleOverlapApplied = true;
+                        Debug.Log($"[GridManager] {sourceCard.CardName} → {targetCard.CardName} 겹치기 효과 2회 발동");
+                        // target 카드의 즉시 효과를 한 번 더 발동
+                        var doubleResult = new ResolutionResult();
+                        foreach (var te in targetCard.OverlapEffects)
+                            ApplyEffect(ref doubleResult, te);
+                        if (HasInstantEffect(doubleResult))
+                            GameEvents.RaiseOverlapEffectTriggered(doubleResult);
+                    }
+                    break;
+
+                // ── 겹친 카드의 결산 효과를 즉시 발동 ──
+                case CardType.TriggerResolutionNow:
+                {
+                    var triggerResult = new ResolutionResult();
+                    foreach (var te in targetCard.Effects)
+                        ApplyEffect(ref triggerResult, te);
+                    triggerResult.damage  += targetBlock.bonusDamage;
+                    triggerResult.defense += targetBlock.bonusDefense;
+                    Debug.Log($"[GridManager] {sourceCard.CardName} → {targetCard.CardName} 결산 효과 즉시 발동!");
+                    GameEvents.RaiseOverlapEffectTriggered(triggerResult);
+                    break;
+                }
+
+                // ── 이 카드 자신의 결산 피해 보너스 ──
+                case CardType.BoostResolutionDamage:
+                    sourceBlock.bonusDamage += effect.power;
+                    Debug.Log($"[GridManager] {sourceCard.CardName} 자신의 결산 피해 +{effect.power}");
+                    break;
+
+                // ── 이 카드 자신의 결산 방어도 보너스 ──
+                case CardType.BoostResolutionDefense:
+                    sourceBlock.bonusDefense += effect.power;
+                    Debug.Log($"[GridManager] {sourceCard.CardName} 자신의 결산 방어도 +{effect.power}");
+                    break;
+            }
+        }
+
+        if (hasInstant)
+        {
+            Debug.Log($"[GridManager] {sourceCard.CardName} 겹침 즉시 효과 — 공격 {instantResult.damage}, 방어 {instantResult.defense}, 회복 {instantResult.heal}");
+            GameEvents.RaiseOverlapEffectTriggered(instantResult);
+        }
     }
+
+    private static bool HasInstantEffect(ResolutionResult r)
+        => r.damage > 0 || r.defense > 0 || r.heal > 0 || r.drawNow > 0;
 
     private ResolutionResult Calculate()
     {

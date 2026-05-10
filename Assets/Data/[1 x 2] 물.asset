@@ -20,6 +20,8 @@ MonoBehaviour:
     power: 5
   - effectType: 1
     power: 5
+  overlapEffects: []
+  overlapDescription: 
   width: 1
   height: 2
-  symbols: 0200000002000000
+  symbols: 0100000001000000

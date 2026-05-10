@@ -10,19 +10,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5314c3e4d98d2a841b3148bac9fcbfa4, type: 3}
-  m_Name: "[1 x 2] \uB3CC"
+  m_Name: "\uACB9\uCE5C \uACF5\uACA9 \uCE74\uB4DC \uACB0\uC0B0 \uD53C\uD574\uB7C9
+    \uC99D\uAC00"
   m_EditorClassIdentifier: Assembly-CSharp::CardData
-  cardName: "[1 x 2] \uB3CC"
-  description: "\uC801\uC5D0\uAC8C 5\uC758 \uD53C\uD574\uB97C \uB450\uBC88 \uC785\uD799\uB2C8\uB2E4"
-  effects:
-  - effectType: 0
-    power: 5
-  - effectType: 4
-    power: 5
+  cardName: "\uACB9\uCE5C \uACF5\uACA9 \uCE74\uB4DC \uACB0\uC0B0 \uD53C\uD574\uB7C9
+    \uC99D\uAC00"
+  description: 
+  effects: []
   overlapEffects:
-  - effectType: 1
+  - effectType: 6
     power: 5
-  overlapDescription: 
+  overlapDescription: "\uACB9\uCE5C \uACF5\uACA9 \uCE74\uB4DC\uC758 \uACB0\uC0B0
+    \uD53C\uD574\uB7C9\uC744 5 \uC99D\uAC00\uC2DC\uD0B5\uB2C8\uB2E4."
   width: 1
-  height: 2
-  symbols: 0100000001000000
+  height: 1
+  symbols: 01000000
