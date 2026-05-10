@@ -120,7 +120,8 @@ public class GridManager : MonoBehaviour
     /// </summary>
     public (int damage, int defense) GetPreview()
     {
-        return Calculate();
+        var (damage, defense, _) = Calculate(); 
+        return (damage, defense);
     }
 
     /// <summary>
@@ -128,43 +129,42 @@ public class GridManager : MonoBehaviour
     /// </summary>
     private void CalculateAndRaiseResolution()
     {
-        var (totalDamage, totalDefense) = Calculate();
-        Debug.Log($"[GridManager] 결산 — 공격 {totalDamage}, 방어 {totalDefense}");
-        
-        // 결산(데미지/방어도 계산)이 끝났으므로 데이터를 초기화한다.
+        var (totalDamage, totalDefense, totalBonusDraw) = Calculate();
+        Debug.Log($"[GridManager] 결산 — 공격 {totalDamage}, 방어 {totalDefense}, 추가드로우 {totalBonusDraw}");
+    
         ClearGrid();
-
-        // 계산된 결과를 발행한다. (이때 UI가 갱신되면 빈 그리드가 렌더링됨)
-        GameEvents.RaiseResolutionResult(totalDamage, totalDefense);
+        
+        GameEvents.RaiseResolutionResult(totalDamage, totalDefense, totalBonusDraw);
     }
 
-    private (int damage, int defense) Calculate()
+    private (int damage, int defense, int bonusDraw) Calculate()
     {
         int totalDamage = 0;
         int totalDefense = 0;
+        int totalBonusDraw = 0; // [추가됨]
 
         foreach (var pb in placedBlocks)
         {
             int overlapBonus = 0;
-
             foreach (var (col, row, _) in pb.card.GetOccupiedCells())
             {
                 int gx = pb.originX + col;
                 int gy = pb.originY + row;
-
                 overlapBonus += overlapCount[gx, gy] - 1;
             }
 
-            int multiplier    = 1 + overlapBonus;
+            int multiplier = 1 + overlapBonus;
             int effectivePower = pb.card.BasePower * multiplier;
 
             if (pb.card.Type == CardType.Attack)
-                totalDamage  += effectivePower;
-            else
+                totalDamage += effectivePower;
+            else if (pb.card.Type == CardType.Defense)
                 totalDefense += effectivePower;
+            else if (pb.card.Type == CardType.Utility_NextTurnDraw)
+                totalBonusDraw += effectivePower; // [추가됨]
         }
 
-        return (totalDamage, totalDefense);
+        return (totalDamage, totalDefense, totalBonusDraw);
     }
 
     private void ClearGrid()

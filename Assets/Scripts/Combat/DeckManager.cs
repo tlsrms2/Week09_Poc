@@ -23,6 +23,9 @@ public class DeckManager : MonoBehaviour
     [Header("드로우 설정")]
     [Tooltip("턴 시작 시 드로우할 카드 수")]
     [SerializeField] private int drawCountPerTurn = 5;
+    
+    // [추가] 다음 턴에 추가로 뽑을 카드 수
+    private int bonusDrawForNextTurn = 0;
 
     // ── Runtime State ──
     private readonly List<CardData> drawPile = new();
@@ -69,7 +72,11 @@ public class DeckManager : MonoBehaviour
     /// </summary>
     public void DrawCards(int count = -1)
     {
-        int drawCount = count > 0 ? count : drawCountPerTurn;
+        // 기본 드로우 수에 보너스 드로우를 합산 (count가 지정되지 않았을 때만)
+        int drawCount = count > 0 ? count : (drawCountPerTurn + bonusDrawForNextTurn);
+    
+        // 합산 후 보너스 드로우 초기화
+        bonusDrawForNextTurn = 0; 
 
         for (int i = 0; i < drawCount; i++)
         {
@@ -85,8 +92,7 @@ public class DeckManager : MonoBehaviour
                 RecycleDiscardPile();
             }
 
-            // 맨 위에서 한 장 드로우
-            CardData card = drawPile[^1];  // 마지막 원소 = "맨 위"
+            CardData card = drawPile[^1];
             drawPile.RemoveAt(drawPile.Count - 1);
             hand.Add(card);
 
@@ -142,5 +148,11 @@ public class DeckManager : MonoBehaviour
             int j = Random.Range(0, i + 1);
             (list[i], list[j]) = (list[j], list[i]);
         }
+    }
+    
+    // [추가] CombatManager가 결산 때 호출할 메서드
+    public void AddBonusDraw(int count)
+    {
+        bonusDrawForNextTurn += count;
     }
 }

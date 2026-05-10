@@ -46,7 +46,7 @@ public static class GameEvents
 
     // ─── 결산 ───
     /// <summary> 결산 결과 발행 (총 공격력, 총 방어도) </summary>
-    public static event Action<int, int> OnResolutionResult;  // totalDamage, totalDefense
+    public static event Action<int, int, int> OnResolutionResult;  // totalDamage, totalDefense
     /// <summary> 적에게 데미지가 적용되었을 때 (적용된 데미지) </summary>
     public static event Action<int> OnDamageDealtToEnemy;
     /// <summary> 플레이어에게 데미지가 적용되었을 때 (적용된 데미지) </summary>
@@ -79,7 +79,10 @@ public static class GameEvents
 
     public static void RaiseBlockPlaced(CardData card, int x, int y) => OnBlockPlaced?.Invoke(card, x, y);
 
-    public static void RaiseResolutionResult(int damage, int defense) => OnResolutionResult?.Invoke(damage, defense);
+    public static void RaiseResolutionResult(int damage, int defense, int bonusDraw)
+    {
+        OnResolutionResult?.Invoke(damage, defense, bonusDraw);
+    }
     public static void RaiseDamageDealtToEnemy(int damage) => OnDamageDealtToEnemy?.Invoke(damage);
     public static void RaiseDamageDealtToPlayer(int damage) => OnDamageDealtToPlayer?.Invoke(damage);
 

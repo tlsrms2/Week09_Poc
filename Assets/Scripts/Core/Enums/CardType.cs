@@ -6,4 +6,5 @@ public enum CardType
 {
     Attack,     // 적에게 데미지
     Defense,    // 자신에게 방어도 부여
+    Utility_NextTurnDraw // 다음 턴에 카드 추가 드로우
 }

@@ -170,7 +170,7 @@ public class CombatManager : MonoBehaviour
     /// 결산 결과를 받아서 데미지/방어도를 적용하고 적 턴으로 전이한다.
     /// Dev A의 GridManager가 결산을 마치고 이 이벤트를 발행한다.
     /// </summary>
-    private void HandleResolutionResult(int totalDamage, int totalDefense)
+    private void HandleResolutionResult(int totalDamage, int totalDefense, int totalBonusDraw)
     {
         if (currentState != CombatState.Resolution) return;
 
@@ -181,6 +181,10 @@ public class CombatManager : MonoBehaviour
         // 방어 적용
         if (totalDefense > 0)
             player.AddDefense(totalDefense);
+
+        // [추가됨] 추가 드로우 적용
+        if (totalBonusDraw > 0)
+            deckManager.AddBonusDraw(totalBonusDraw);
 
         // 핸드에 남은 카드 버리기
         deckManager.DiscardHand();
