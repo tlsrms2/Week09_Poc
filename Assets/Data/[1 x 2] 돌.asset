@@ -17,11 +17,11 @@ MonoBehaviour:
   effects:
   - effectType: 0
     power: 5
-  - effectType: 0
+  - effectType: 4
     power: 5
   overlapEffects:
-  - effectType: 0
-    power: 5
+  - effectType: 5
+    power: 2
   overlapDescription: 
   width: 1
   height: 2

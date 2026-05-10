@@ -103,14 +103,20 @@ namespace Cyg.UI
             for (int i = 0; i < registeredCards.Count; i++)
             {
                 CardData card = registeredCards[i];
-                string cardName = card != null ? card.CardName : "Unknown";
                 builder.Append(i + 1);
                 builder.Append(". ");
-                builder.Append(cardName);
-                builder.Append("  ");
-                builder.Append(card != null && card.Type == CardType.Attack ? "공격" : "방어");
-                builder.Append(" ");
-                builder.Append(card != null ? card.BasePower : 0);
+                builder.Append(card != null ? card.CardName : "Unknown");
+
+                if (card != null)
+                {
+                    foreach (var effect in card.Effects)
+                    {
+                        builder.Append("  ");
+                        builder.Append(GetEffectLabel(effect.effectType));
+                        builder.Append(" ");
+                        builder.Append(effect.power);
+                    }
+                }
 
                 if (i < registeredCards.Count - 1)
                     builder.AppendLine();
@@ -118,6 +124,17 @@ namespace Cyg.UI
 
             return builder.ToString();
         }
+
+        private static string GetEffectLabel(CardType type) => type switch
+        {
+            CardType.Attack  => "공격",
+            CardType.Defense => "방어",
+            CardType.Heal    => "회복",
+            CardType.Drain   => "흡수",
+            CardType.Draw    => "드로우(다음턴)",
+            CardType.DrawNow => "드로우(즉시)",
+            _                => type.ToString(),
+        };
 
         private void EnsureTextObjects()
         {

@@ -8,5 +8,6 @@ public enum CardType
     Defense,    // 자신에게 방어도 부여
     Heal,       // 자신 HP 회복
     Drain,      // 적에게 데미지 + 자신 HP 회복
-    Draw,       // 카드 추가 드로우 (power = 드로우 매수)
+    Draw,       // 다음 턴 추가 드로우 (power = 드로우 매수)
+    DrawNow,    // 즉시 드로우 (power = 드로우 매수)
 }

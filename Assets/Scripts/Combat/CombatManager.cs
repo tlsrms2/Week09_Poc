@@ -167,6 +167,7 @@ public class CombatManager : MonoBehaviour
         if (result.defense > 0) player.AddDefense(result.defense);
         if (result.heal > 0)    player.Heal(result.heal);
         if (result.draw > 0)    extraDrawNextTurn += result.draw;
+        if (result.drawNow > 0) deckManager.DrawCards(result.drawNow);
 
         if (enemy.IsDead) TransitionTo(CombatState.Win);
     }

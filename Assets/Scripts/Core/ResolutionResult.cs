@@ -6,5 +6,6 @@ public struct ResolutionResult
     public int damage;   // 적에게 줄 데미지
     public int defense;  // 플레이어에게 줄 방어도
     public int heal;     // 플레이어 HP 회복량
-    public int draw;     // 추가 드로우 매수
+    public int draw;     // 다음 턴 추가 드로우 매수
+    public int drawNow;  // 즉시 드로우 매수
 }

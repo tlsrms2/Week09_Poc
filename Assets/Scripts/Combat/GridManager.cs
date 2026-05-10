@@ -208,6 +208,7 @@ public class GridManager : MonoBehaviour
             case CardType.Defense: result.defense += effect.power; break;
             case CardType.Heal:    result.heal    += effect.power; break;
             case CardType.Draw:    result.draw    += effect.power; break;
+            case CardType.DrawNow: result.drawNow += effect.power; break;
             case CardType.Drain:   result.damage  += effect.power;
                                    result.heal    += effect.power; break;
         }
