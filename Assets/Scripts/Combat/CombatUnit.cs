@@ -72,6 +72,8 @@ public class CombatUnit : MonoBehaviour
         if (isPlayer)
         {
             GameEvents.RaisePlayerDefenseChanged(defense);
+            if (absorbed > 0)
+                GameEvents.RaiseDamageAbsorbedByPlayer(absorbed);
             if (remainingDamage > 0)
                 GameEvents.RaiseDamageDealtToPlayer(remainingDamage);
         }

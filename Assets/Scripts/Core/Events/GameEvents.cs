@@ -55,6 +55,8 @@ public static class GameEvents
     public static event Action<int> OnDamageDealtToEnemy;
     /// <summary> 플레이어에게 데미지가 적용되었을 때 (적용된 데미지) </summary>
     public static event Action<int> OnDamageDealtToPlayer;
+    /// <summary> 플레이어 방어도에 흡수된 데미지 </summary>
+    public static event Action<int> OnDamageAbsorbedByPlayer;
 
     // ─── 체력 변동 ───
     /// <summary> 플레이어 HP 변경 시 (현재HP, 최대HP) </summary>
@@ -88,6 +90,7 @@ public static class GameEvents
     public static void RaiseOverlapEffectTriggered(ResolutionResult result) => OnOverlapEffectTriggered?.Invoke(result);
     public static void RaiseDamageDealtToEnemy(int damage) => OnDamageDealtToEnemy?.Invoke(damage);
     public static void RaiseDamageDealtToPlayer(int damage) => OnDamageDealtToPlayer?.Invoke(damage);
+    public static void RaiseDamageAbsorbedByPlayer(int absorbed) => OnDamageAbsorbedByPlayer?.Invoke(absorbed);
 
     public static void RaisePlayerHpChanged(int current, int max) => OnPlayerHpChanged?.Invoke(current, max);
     public static void RaiseEnemyHpChanged(int current, int max) => OnEnemyHpChanged?.Invoke(current, max);
@@ -115,6 +118,7 @@ public static class GameEvents
         OnOverlapEffectTriggered = null;
         OnDamageDealtToEnemy = null;
         OnDamageDealtToPlayer = null;
+        OnDamageAbsorbedByPlayer = null;
         OnPlayerHpChanged = null;
         OnEnemyHpChanged = null;
         OnPlayerDefenseChanged = null;

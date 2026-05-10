@@ -960,6 +960,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fdfd352ea73fe5d43b99ba7b8e419b32, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GridManager
+  blockResolveDelay: 0.4
 --- !u!1 &363282087
 GameObject:
   m_ObjectHideFlags: 0
@@ -1502,6 +1503,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
+--- !u!223 &632159527 stripped
+Canvas:
+  m_CorrespondingSourceObject: {fileID: 291829111192839415, guid: 5987f3262e5b58143ac9bc14cb74b275, type: 3}
+  m_PrefabInstance: {fileID: 3789013540220326075}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &649544377
 GameObject:
   m_ObjectHideFlags: 0
@@ -1760,6 +1766,11 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 677954429}
   m_CullTransparentMesh: 1
+--- !u!224 &690354407 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 1339666520363318781, guid: 5987f3262e5b58143ac9bc14cb74b275, type: 3}
+  m_PrefabInstance: {fileID: 3789013540220326075}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &783898974
 GameObject:
   m_ObjectHideFlags: 0
@@ -2301,7 +2312,7 @@ MonoBehaviour:
   enemyBaseDamage: 8
   resolutionDelay: 0.5
   resolutionDisplayTime: 1
-  enemyAttackDelay: 1
+  enemyAttackDelay: 0.5
   postAttackDelay: 0.5
 --- !u!1 &1203761918
 GameObject:
@@ -2462,6 +2473,7 @@ Transform:
   - {fileID: 1192402169}
   - {fileID: 610214714}
   - {fileID: 356869186}
+  - {fileID: 1852148093}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1526734887
@@ -2497,6 +2509,11 @@ Transform:
   - {fileID: 1935796073}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!224 &1551014414 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 6179453634867297262, guid: 5987f3262e5b58143ac9bc14cb74b275, type: 3}
+  m_PrefabInstance: {fileID: 3789013540220326075}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1623276706
 GameObject:
   m_ObjectHideFlags: 0
@@ -2846,6 +2863,62 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!1 &1852148092
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1852148093}
+  - component: {fileID: 1852148094}
+  m_Layer: 0
+  m_Name: DamagePopupSpawner
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1852148093
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1852148092}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1421877404}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1852148094
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1852148092}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 889d2628eb49b0042b3976a05ddd2142, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamagePopupSpawner
+  canvas: {fileID: 632159527}
+  enemyAnchor: {fileID: 690354407}
+  playerAnchor: {fileID: 1551014414}
+  yForce: 250
+  xRange: 150
+  gravity: 500
+  duration: 0.9
+  fontSize: 48
+  fontStyle: 1
+  enemyDamageColor: {r: 1, g: 0.25, b: 0.25, a: 1}
+  playerDamageColor: {r: 1, g: 0.85, b: 0.15, a: 1}
+  shieldAbsorbColor: {r: 0.4, g: 0.8, b: 1, a: 1}
 --- !u!1 &1860708289
 GameObject:
   m_ObjectHideFlags: 0
