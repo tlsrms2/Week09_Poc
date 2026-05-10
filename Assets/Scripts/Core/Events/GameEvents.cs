@@ -45,8 +45,10 @@ public static class GameEvents
     public static event Action<CardData, int, int> OnBlockPlaced;  // cardData, gridX, gridY
 
     // ─── 결산 ───
-    /// <summary> 결산 결과 발행 </summary>
+    /// <summary> 블록 하나의 결산 결과 발행 (블록마다 순서대로 호출됨) </summary>
     public static event Action<ResolutionResult> OnResolutionResult;
+    /// <summary> 모든 블록 결산 완료 신호 — 손패 버리기·전이 타이밍용 </summary>
+    public static event Action OnResolutionComplete;
     /// <summary> 블록 겹침 시 즉시 발동하는 효과 발행 </summary>
     public static event Action<ResolutionResult> OnOverlapEffectTriggered;
     /// <summary> 적에게 데미지가 적용되었을 때 (적용된 데미지) </summary>
@@ -82,6 +84,7 @@ public static class GameEvents
     public static void RaiseBlockPlaced(CardData card, int x, int y) => OnBlockPlaced?.Invoke(card, x, y);
 
     public static void RaiseResolutionResult(ResolutionResult result) => OnResolutionResult?.Invoke(result);
+    public static void RaiseResolutionComplete() => OnResolutionComplete?.Invoke();
     public static void RaiseOverlapEffectTriggered(ResolutionResult result) => OnOverlapEffectTriggered?.Invoke(result);
     public static void RaiseDamageDealtToEnemy(int damage) => OnDamageDealtToEnemy?.Invoke(damage);
     public static void RaiseDamageDealtToPlayer(int damage) => OnDamageDealtToPlayer?.Invoke(damage);
@@ -108,6 +111,7 @@ public static class GameEvents
         OnCardUsed = null;
         OnBlockPlaced = null;
         OnResolutionResult = null;
+        OnResolutionComplete = null;
         OnOverlapEffectTriggered = null;
         OnDamageDealtToEnemy = null;
         OnDamageDealtToPlayer = null;

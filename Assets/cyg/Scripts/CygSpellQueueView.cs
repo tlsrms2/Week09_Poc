@@ -24,8 +24,11 @@ namespace Cyg.UI
         [SerializeField] private string title = "등록 주문";
         [SerializeField] private string attackLabel = "최종 공격";
         [SerializeField] private string defenseLabel = "최종 방어";
+        [SerializeField] private Color activeSpellColor = new Color(1f, 0.85f, 0.1f);  // 결산 중인 카드 색상
 
         private readonly List<CardData> registeredCards = new();
+        private int resolvingIndex = -1;
+        private int resolvedCount = 0;
 
         private void Awake()
         {
@@ -35,8 +38,11 @@ namespace Cyg.UI
 
         private void OnEnable()
         {
-            GameEvents.OnBlockPlaced += HandleBlockPlaced;
-            GameEvents.OnDrawPhaseStarted += HandleDrawPhaseStarted;
+            GameEvents.OnBlockPlaced            += HandleBlockPlaced;
+            GameEvents.OnDrawPhaseStarted       += HandleDrawPhaseStarted;
+            GameEvents.OnResolutionPhaseStarted += HandleResolutionPhaseStarted;
+            GameEvents.OnResolutionResult       += HandleResolutionResult;
+            GameEvents.OnResolutionComplete     += HandleResolutionComplete;
 
             if (findGridManagerOnEnable && gridManager == null)
                 gridManager = FindAnyObjectByType<GridManager>();
@@ -46,8 +52,11 @@ namespace Cyg.UI
 
         private void OnDisable()
         {
-            GameEvents.OnBlockPlaced -= HandleBlockPlaced;
-            GameEvents.OnDrawPhaseStarted -= HandleDrawPhaseStarted;
+            GameEvents.OnBlockPlaced            -= HandleBlockPlaced;
+            GameEvents.OnDrawPhaseStarted       -= HandleDrawPhaseStarted;
+            GameEvents.OnResolutionPhaseStarted -= HandleResolutionPhaseStarted;
+            GameEvents.OnResolutionResult       -= HandleResolutionResult;
+            GameEvents.OnResolutionComplete     -= HandleResolutionComplete;
         }
 
         public void ClearQueue()
@@ -67,6 +76,27 @@ namespace Cyg.UI
         private void HandleDrawPhaseStarted(int _)
         {
             ClearQueue();
+        }
+
+        private void HandleResolutionPhaseStarted()
+        {
+            resolvedCount = 0;
+            resolvingIndex = 0;
+            RefreshView();
+        }
+
+        private void HandleResolutionResult(ResolutionResult _)
+        {
+            resolvingIndex = resolvedCount;
+            resolvedCount++;
+            RefreshView();
+        }
+
+        private void HandleResolutionComplete()
+        {
+            resolvingIndex = -1;
+            resolvedCount = 0;
+            RefreshView();
         }
 
         private void RefreshView()
@@ -99,10 +129,15 @@ namespace Cyg.UI
             if (registeredCards.Count == 0)
                 return emptyListText;
 
+            string hexColor = ColorUtility.ToHtmlStringRGB(activeSpellColor);
             var builder = new StringBuilder(256);
             for (int i = 0; i < registeredCards.Count; i++)
             {
                 CardData card = registeredCards[i];
+                bool isResolving = i == resolvingIndex;
+
+                if (isResolving) builder.Append($"<color=#{hexColor}>");
+
                 builder.Append(i + 1);
                 builder.Append(". ");
                 builder.Append(card != null ? card.CardName : "Unknown");
@@ -117,6 +152,8 @@ namespace Cyg.UI
                         builder.Append(effect.power);
                     }
                 }
+
+                if (isResolving) builder.Append("</color>");
 
                 if (i < registeredCards.Count - 1)
                     builder.AppendLine();

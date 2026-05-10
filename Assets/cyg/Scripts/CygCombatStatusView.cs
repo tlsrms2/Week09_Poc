@@ -16,12 +16,16 @@ namespace Cyg.UI
         [Header("Optional Runtime Sources")]
         [SerializeField] private CombatUnit playerUnit;
         [SerializeField] private CombatUnit enemyUnit;
+        [SerializeField] private CombatManager combatManager;
+        [SerializeField] private GridManager gridManager;
         [SerializeField] private bool findUnitsOnEnable = true;
 
         [Header("Text")]
         [SerializeField] private TextMeshProUGUI playerHpText;
         [SerializeField] private TextMeshProUGUI enemyHpText;
         [SerializeField] private TextMeshProUGUI playerDefenseText;
+        [SerializeField] private TextMeshProUGUI playerAttackText;
+        [SerializeField] private TextMeshProUGUI enemyAttackText;
         [SerializeField] private HpTextMode hpTextMode = HpTextMode.CurrentOnly;
 
         [Header("Optional Bars")]
@@ -31,42 +35,51 @@ namespace Cyg.UI
         [Header("Fallback")]
         [SerializeField] private string missingValueText = "--";
 
+        private int accumulatedDamage = 0;
+        private bool isResolving = false;
+
         private void OnEnable()
         {
-            GameEvents.OnPlayerHpChanged += HandlePlayerHpChanged;
-            GameEvents.OnEnemyHpChanged += HandleEnemyHpChanged;
+            GameEvents.OnPlayerHpChanged  += HandlePlayerHpChanged;
+            GameEvents.OnEnemyHpChanged   += HandleEnemyHpChanged;
             GameEvents.OnPlayerDefenseChanged += HandlePlayerDefenseChanged;
+            //GameEvents.OnBlockPlaced            += HandleBlockPlaced;
+            GameEvents.OnDrawPhaseStarted       += HandleDrawPhaseStarted;
+            GameEvents.OnResolutionPhaseStarted += HandleResolutionPhaseStarted;
+            GameEvents.OnResolutionResult       += HandleResolutionResult;
+            GameEvents.OnResolutionComplete     += HandleResolutionComplete;
 
             if (findUnitsOnEnable)
-            {
                 RefreshUnitReferences();
-            }
 
             RefreshSnapshot();
         }
 
         private void OnDisable()
         {
-            GameEvents.OnPlayerHpChanged -= HandlePlayerHpChanged;
-            GameEvents.OnEnemyHpChanged -= HandleEnemyHpChanged;
+            GameEvents.OnPlayerHpChanged  -= HandlePlayerHpChanged;
+            GameEvents.OnEnemyHpChanged   -= HandleEnemyHpChanged;
             GameEvents.OnPlayerDefenseChanged -= HandlePlayerDefenseChanged;
+            GameEvents.OnBlockPlaced            -= HandleBlockPlaced;
+            GameEvents.OnDrawPhaseStarted       -= HandleDrawPhaseStarted;
+            GameEvents.OnResolutionPhaseStarted -= HandleResolutionPhaseStarted;
+            GameEvents.OnResolutionResult       -= HandleResolutionResult;
+            GameEvents.OnResolutionComplete     -= HandleResolutionComplete;
         }
 
         public void RefreshUnitReferences()
         {
             CombatUnit[] units = FindObjectsByType<CombatUnit>(FindObjectsSortMode.None);
-
             for (int i = 0; i < units.Length; i++)
             {
-                if (units[i].IsPlayer)
-                {
-                    playerUnit = units[i];
-                }
-                else
-                {
-                    enemyUnit = units[i];
-                }
+                if (units[i].IsPlayer) playerUnit = units[i];
+                else                   enemyUnit  = units[i];
             }
+
+            if (combatManager == null)
+                combatManager = FindAnyObjectByType<CombatManager>();
+            if (gridManager == null)
+                gridManager = FindAnyObjectByType<GridManager>();
         }
 
         public void RefreshSnapshot()
@@ -84,14 +97,57 @@ namespace Cyg.UI
             }
 
             if (enemyUnit != null)
-            {
                 HandleEnemyHpChanged(enemyUnit.CurrentHp, enemyUnit.MaxHp);
-            }
             else
             {
                 SetText(enemyHpText, missingValueText);
                 SetFill(enemyHpFill, 0f);
             }
+
+            RefreshAttackTexts();
+        }
+
+        private void RefreshAttackTexts()
+        {
+            int playerAtk = isResolving
+                ? accumulatedDamage
+                : (gridManager != null ? gridManager.GetPreview().damage : 0);
+            SetText(playerAttackText, playerAtk.ToString());
+
+            string enemyAtk = combatManager != null
+                ? combatManager.EnemyBaseDamage.ToString()
+                : missingValueText;
+            SetText(enemyAttackText, enemyAtk);
+        }
+
+        private void HandleBlockPlaced(CardData _, int __, int ___)
+        {
+            RefreshAttackTexts();
+        }
+
+        private void HandleDrawPhaseStarted(int _)
+        {
+            isResolving = false;
+            accumulatedDamage = 0;
+            RefreshAttackTexts();
+        }
+
+        private void HandleResolutionPhaseStarted()
+        {
+            isResolving = true;
+            accumulatedDamage = 0;
+            RefreshAttackTexts();
+        }
+
+        private void HandleResolutionResult(ResolutionResult result)
+        {
+            accumulatedDamage += result.damage;
+            SetText(playerAttackText, accumulatedDamage.ToString());
+        }
+
+        private void HandleResolutionComplete()
+        {
+            isResolving = false;
         }
 
         private void HandlePlayerHpChanged(int current, int max)

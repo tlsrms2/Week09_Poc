@@ -1491,6 +1491,17 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 805b21edbcac20447aa8e2e9cb1f22dc, type: 2}
   - {fileID: 11400000, guid: 805b21edbcac20447aa8e2e9cb1f22dc, type: 2}
   drawCountPerTurn: 6
+--- !u!114 &613066519 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7932111300528693554, guid: 5987f3262e5b58143ac9bc14cb74b275, type: 3}
+  m_PrefabInstance: {fileID: 3789013540220326075}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
 --- !u!1 &649544377
 GameObject:
   m_ObjectHideFlags: 0
@@ -2288,6 +2299,10 @@ MonoBehaviour:
   player: {fileID: 1414182076}
   enemy: {fileID: 1935796072}
   enemyBaseDamage: 8
+  resolutionDelay: 0.5
+  resolutionDisplayTime: 1
+  enemyAttackDelay: 1
+  postAttackDelay: 0.5
 --- !u!1 &1203761918
 GameObject:
   m_ObjectHideFlags: 0
@@ -3091,6 +3106,17 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!114 &1951304812 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2347682980467787022, guid: 5987f3262e5b58143ac9bc14cb74b275, type: 3}
+  m_PrefabInstance: {fileID: 3789013540220326075}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
 --- !u!1 &2073542202
 GameObject:
   m_ObjectHideFlags: 0
@@ -3232,6 +3258,14 @@ PrefabInstance:
       propertyPath: gridManager
       value: 
       objectReference: {fileID: 356869187}
+    - target: {fileID: 7933808185809713804, guid: 5987f3262e5b58143ac9bc14cb74b275, type: 3}
+      propertyPath: enemyAttackText
+      value: 
+      objectReference: {fileID: 1951304812}
+    - target: {fileID: 7933808185809713804, guid: 5987f3262e5b58143ac9bc14cb74b275, type: 3}
+      propertyPath: playerAttackText
+      value: 
+      objectReference: {fileID: 613066519}
     - target: {fileID: 8837040809995895212, guid: 5987f3262e5b58143ac9bc14cb74b275, type: 3}
       propertyPath: m_Pivot.x
       value: 0
