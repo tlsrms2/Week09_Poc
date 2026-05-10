@@ -27,6 +27,7 @@ public class GridManager : MonoBehaviour
     {
         public CardData card;
         public int originX, originY;
+        public bool overlapEffectFired;  // 이 블록의 겹침 효과가 이미 발동됐으면 true
     }
 
     // ── Public Read-Only ──
@@ -94,16 +95,64 @@ public class GridManager : MonoBehaviour
         if (card == null) return false;
         if (!CanPlaceBlock(card, originX, originY)) return false;
 
-        foreach (var (col, row, symbol) in card.GetOccupiedCells())
+        var cells = card.GetOccupiedCells();
+
+        // 1. 겹치는 기존 블록 인덱스 수집
+        bool hadOverlap = false;
+        var overlappedIndices = new HashSet<int>();
+        foreach (var (col, row, _) in cells)
         {
             int gx = originX + col;
             int gy = originY + row;
+            if (grid[gx, gy] == SymbolType.None) continue;
 
+            hadOverlap = true;
+            for (int i = 0; i < placedBlocks.Count; i++)
+            {
+                var pb = placedBlocks[i];
+                foreach (var (c, r, _) in pb.card.GetOccupiedCells())
+                {
+                    if (pb.originX + c == gx && pb.originY + r == gy)
+                    {
+                        overlappedIndices.Add(i);
+                        break;
+                    }
+                }
+            }
+        }
+
+        // 2. 그리드 업데이트
+        foreach (var (col, row, symbol) in cells)
+        {
+            int gx = originX + col;
+            int gy = originY + row;
             grid[gx, gy] = symbol;
             overlapCount[gx, gy]++;
         }
 
-        placedBlocks.Add(new PlacedBlock { card = card, originX = originX, originY = originY });
+        // 3. 겹쳐진 기존 블록들의 겹침 효과 발동 (미발동 블록만)
+        foreach (int idx in overlappedIndices)
+        {
+            if (!placedBlocks[idx].overlapEffectFired)
+            {
+                TriggerOverlapEffects(placedBlocks[idx].card);
+                var pb = placedBlocks[idx];
+                pb.overlapEffectFired = true;
+                placedBlocks[idx] = pb;
+            }
+        }
+
+        // 4. 새로 놓인 카드의 겹침 효과 발동
+        if (hadOverlap)
+            TriggerOverlapEffects(card);
+
+        placedBlocks.Add(new PlacedBlock
+        {
+            card = card,
+            originX = originX,
+            originY = originY,
+            overlapEffectFired = hadOverlap
+        });
         GameEvents.RaiseBlockPlaced(card, originX, originY);
 
         Debug.Log($"[GridManager] {card.CardName} 배치 완료 ({originX}, {originY})");
@@ -128,39 +177,40 @@ public class GridManager : MonoBehaviour
         GameEvents.RaiseResolutionResult(result);
     }
 
+    private void TriggerOverlapEffects(CardData card)
+    {
+        var result = new ResolutionResult();
+        foreach (var effect in card.OverlapEffects)
+            ApplyEffect(ref result, effect);
+
+        Debug.Log($"[GridManager] {card.CardName} 겹침 효과 즉시 발동 — 공격 {result.damage}, 방어 {result.defense}, 회복 {result.heal}, 드로우 +{result.draw}");
+        GameEvents.RaiseOverlapEffectTriggered(result);
+    }
+
     private ResolutionResult Calculate()
     {
         var result = new ResolutionResult();
 
         foreach (var pb in placedBlocks)
         {
-            int overlapBonus = 0;
-
-            foreach (var (col, row, _) in pb.card.GetOccupiedCells())
-            {
-                int gx = pb.originX + col;
-                int gy = pb.originY + row;
-                overlapBonus += overlapCount[gx, gy] - 1;
-            }
-
-            int multiplier = 1 + overlapBonus;
-
             foreach (var effect in pb.card.Effects)
-            {
-                int power = effect.power * multiplier;
-                switch (effect.effectType)
-                {
-                    case CardType.Attack:  result.damage  += power; break;
-                    case CardType.Defense: result.defense += power; break;
-                    case CardType.Heal:    result.heal    += power; break;
-                    case CardType.Draw:    result.draw    += effect.power; break;
-                    case CardType.Drain:   result.damage  += power;
-                                          result.heal    += power; break;
-                }
-            }
+                ApplyEffect(ref result, effect);
         }
 
         return result;
+    }
+
+    private static void ApplyEffect(ref ResolutionResult result, CardEffect effect)
+    {
+        switch (effect.effectType)
+        {
+            case CardType.Attack:  result.damage  += effect.power; break;
+            case CardType.Defense: result.defense += effect.power; break;
+            case CardType.Heal:    result.heal    += effect.power; break;
+            case CardType.Draw:    result.draw    += effect.power; break;
+            case CardType.Drain:   result.damage  += effect.power;
+                                   result.heal    += effect.power; break;
+        }
     }
 
     private void ClearGrid()

@@ -39,14 +39,16 @@ public class CombatManager : MonoBehaviour
 
     private void OnEnable()
     {
-        GameEvents.OnTurnEndRequested += HandleTurnEndRequested;
-        GameEvents.OnResolutionResult += HandleResolutionResult;
+        GameEvents.OnTurnEndRequested       += HandleTurnEndRequested;
+        GameEvents.OnResolutionResult       += HandleResolutionResult;
+        GameEvents.OnOverlapEffectTriggered += HandleOverlapEffectTriggered;
     }
 
     private void OnDisable()
     {
-        GameEvents.OnTurnEndRequested -= HandleTurnEndRequested;
-        GameEvents.OnResolutionResult -= HandleResolutionResult;
+        GameEvents.OnTurnEndRequested       -= HandleTurnEndRequested;
+        GameEvents.OnResolutionResult       -= HandleResolutionResult;
+        GameEvents.OnOverlapEffectTriggered -= HandleOverlapEffectTriggered;
     }
 
     // ═══════════════════════════════════════════
@@ -155,6 +157,19 @@ public class CombatManager : MonoBehaviour
     }
 
     // ─── Event Handlers ───
+
+    /// <summary>
+    /// 블록 겹침 시 즉시 발동 — 배치 페이즈 중에도 바로 전투 수치에 반영된다.
+    /// </summary>
+    private void HandleOverlapEffectTriggered(ResolutionResult result)
+    {
+        if (result.damage > 0)  enemy.TakeDamage(result.damage);
+        if (result.defense > 0) player.AddDefense(result.defense);
+        if (result.heal > 0)    player.Heal(result.heal);
+        if (result.draw > 0)    extraDrawNextTurn += result.draw;
+
+        if (enemy.IsDead) TransitionTo(CombatState.Win);
+    }
 
     /// <summary>
     /// 플레이어가 턴 종료 버튼을 눌렀을 때 호출.

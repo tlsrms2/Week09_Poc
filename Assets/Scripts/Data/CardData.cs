@@ -17,8 +17,15 @@ public class CardData : ScriptableObject
     [SerializeField] private string description = "";
 
     [Header("효과 목록")]
-    [Tooltip("한 장에 여러 효과를 부여할 수 있다.")]
+    [Tooltip("배치 효과 — 결산 시 적용된다.")]
     [SerializeField] private List<CardEffect> effects = new();
+
+    [Tooltip("겹침 효과 — 다른 블록 위에 올라탔을 때 결산 시 1회만 적용된다.")]
+    [SerializeField] private List<CardEffect> overlapEffects = new();
+
+    [Tooltip("겹침 효과 설명 (UI 표시용)")]
+    [TextArea(2, 4)]
+    [SerializeField] private string overlapDescription = "";
 
     [HideInInspector]
     [SerializeField] private int width = 1;
@@ -32,7 +39,9 @@ public class CardData : ScriptableObject
     // ── Public Properties ──
     public string CardName => cardName;
     public string Description => description;
+    public string OverlapDescription => overlapDescription;
     public IReadOnlyList<CardEffect> Effects => effects;
+    public IReadOnlyList<CardEffect> OverlapEffects => overlapEffects;
 
     // 첫 번째 효과 기준 — 기존 코드 호환용
     public CardType Type    => effects.Count > 0 ? effects[0].effectType : CardType.Attack;
