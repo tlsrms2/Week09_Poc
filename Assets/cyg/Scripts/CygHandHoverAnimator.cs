@@ -32,10 +32,21 @@ namespace Cyg.UI
         [SerializeField, Min(0f)] private float fanMaxRotation = 8f;
         [SerializeField, Min(0f)] private float hoverRotationEase = 0.85f;
 
+        [Header("Overflow Fit")]
+        [SerializeField] private bool keepCardsInsideSlotRoot = true;
+        [SerializeField, Min(0f)] private float fitHorizontalPadding = 0f;
+
+        [Header("Hover Layer")]
+        [SerializeField] private bool bringHoveredCardToFront = true;
+        [SerializeField] private int hoveredSortingOrder = 5000;
+        [SerializeField] private bool routeRaycastsToHoveredCard = true;
+
         private readonly List<CardVisual> cards = new();
         private readonly HashSet<Transform> inactiveCards = new();
         private readonly Dictionary<Transform, CardStaticPose> cardStaticPoses = new();
         private readonly Dictionary<Transform, CardPose> inactiveCardPoses = new();
+        private readonly Dictionary<Transform, CardSortingState> cardSortingStates = new();
+        private readonly Dictionary<Transform, bool> cardRaycastStates = new();
         private Canvas rootCanvas;
         private Camera eventCamera;
         private int hoveredIndex = -1;
@@ -63,6 +74,8 @@ namespace Cyg.UI
             }
 
             hoveredIndex = -1;
+            ResetCardSorting();
+            ResetCardRaycasts();
             SetCardInfoPanelVisible(false);
         }
 
@@ -90,6 +103,7 @@ namespace Cyg.UI
             }
 
             AnimateCards(isDraggingCard);
+            ApplyHoverLayering(isDraggingCard);
             SetCardInfoPanelVisible(showCardInfoPanelOnHover && (hoveredIndex >= 0 || isDraggingCard));
         }
 
@@ -118,6 +132,7 @@ namespace Cyg.UI
         {
             yield return null;
 
+            PrepareHoverLayerComponents();
             Canvas.ForceUpdateCanvases();
             if (slotRoot is RectTransform slotRootRect)
             {
@@ -142,6 +157,8 @@ namespace Cyg.UI
                 cardInfoPanel = FindInRoot("Panel_CardInfo");
             }
 
+            PrepareHoverLayerComponents();
+
             cards.Clear();
             cachedChildCount = slotRoot.childCount;
 
@@ -161,6 +178,8 @@ namespace Cyg.UI
 
                 cards.Add(new CardVisual(card, staticPose));
             }
+
+            PruneMissingSortingStates();
         }
 
         private void CacheCanvasReferences()
@@ -192,6 +211,8 @@ namespace Cyg.UI
             }
 
             inactiveCards.Add(cardTransform);
+            RestoreCardSorting(cardTransform);
+            RestoreCardRaycast(cardTransform);
 
             if (cardTransform is RectTransform rectTransform)
             {
@@ -211,7 +232,6 @@ namespace Cyg.UI
 
             cardTransform.gameObject.SetActive(true);
             ClearHover();
-            RequestRefreshCards();
         }
 
         public void RestoreCardActive(GameObject cardObject)
@@ -231,6 +251,8 @@ namespace Cyg.UI
 
             inactiveCards.Remove(cardTransform);
             inactiveCardPoses.Remove(cardTransform);
+            RestoreCardSorting(cardTransform);
+            RestoreCardRaycast(cardTransform);
 
             if (cardTransform.TryGetComponent(out CanvasGroup canvasGroup))
             {
@@ -238,8 +260,6 @@ namespace Cyg.UI
                 canvasGroup.blocksRaycasts = true;
                 canvasGroup.interactable = true;
             }
-
-            RequestRefreshCards();
         }
 
         public void SetCardInfoPanel(GameObject panel)
@@ -266,6 +286,55 @@ namespace Cyg.UI
             }
 
             return slot.childCount > 0 ? slot.GetChild(0) as RectTransform : null;
+        }
+
+        private void PrepareHoverLayerComponents()
+        {
+            if (!bringHoveredCardToFront || slotRoot == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < slotRoot.childCount; i++)
+            {
+                RectTransform card = FindCardVisual(slotRoot.GetChild(i));
+                if (card == null)
+                {
+                    continue;
+                }
+
+                EnsureHoverLayerComponents(card);
+            }
+        }
+
+        private void EnsureHoverLayerComponents(RectTransform card)
+        {
+            if (card == null)
+            {
+                return;
+            }
+
+            if (!card.TryGetComponent(out Canvas canvas))
+            {
+                canvas = card.gameObject.AddComponent<Canvas>();
+            }
+
+            if (!card.TryGetComponent(out GraphicRaycaster _))
+            {
+                card.gameObject.AddComponent<GraphicRaycaster>();
+            }
+
+            if (canvas.overrideSorting)
+            {
+                return;
+            }
+
+            if (rootCanvas != null)
+            {
+                canvas.sortingLayerID = rootCanvas.sortingLayerID;
+            }
+
+            canvas.sortingOrder = 0;
         }
 
         private GameObject FindInRoot(string objectName)
@@ -357,7 +426,7 @@ namespace Cyg.UI
                 }
 
                 float fanAmount = GetFanAmount(i);
-                Vector2 targetPosition = card.BasePosition + GetFanOffset(fanAmount);
+                Vector2 targetPosition = GetFittedBasePosition(i) + GetFanOffset(fanAmount);
                 Vector3 targetScale = card.BaseScale;
                 Quaternion targetRotation = GetFanRotation(card.BaseRotation, fanAmount);
 
@@ -377,6 +446,8 @@ namespace Cyg.UI
                         targetPosition += Vector2.right * (direction * neighborPush * falloff);
                     }
                 }
+
+                targetPosition = ClampInsideSlotRoot(card.RectTransform, targetPosition, targetScale);
 
                 card.RectTransform.anchoredPosition = Vector2.Lerp(card.RectTransform.anchoredPosition, targetPosition, t);
                 card.RectTransform.localScale = Vector3.Lerp(card.RectTransform.localScale, targetScale, t);
@@ -408,7 +479,7 @@ namespace Cyg.UI
                 }
 
                 CanvasGroup canvasGroup = rectTransform.GetComponent<CanvasGroup>();
-                if (canvasGroup != null && (!canvasGroup.blocksRaycasts || canvasGroup.alpha < 0.99f))
+                if (canvasGroup != null && canvasGroup.alpha < 0.99f)
                 {
                     return true;
                 }
@@ -469,6 +540,380 @@ namespace Cyg.UI
             }
 
             return baseRotation * Quaternion.Euler(0f, 0f, -fanAmount * fanMaxRotation);
+        }
+
+        private Vector2 GetFittedBasePosition(int index)
+        {
+            if (index < 0 || index >= cards.Count)
+            {
+                return Vector2.zero;
+            }
+
+            if (!keepCardsInsideSlotRoot)
+            {
+                return cards[index].BasePosition;
+            }
+
+            if (!TryGetParentLocalHorizontalBounds(out float left, out float right))
+            {
+                return cards[index].BasePosition;
+            }
+
+            float availableWidth = right - left;
+            if (availableWidth <= 0f)
+            {
+                return cards[index].BasePosition;
+            }
+
+            float baseCenter = GetBaseContentCenterLocal();
+            float fullWidth = GetScaledContentWidthLocal(baseCenter, 1f, out float fullMin, out float fullMax);
+            if (fullWidth <= availableWidth && fullMin >= left && fullMax <= right)
+            {
+                return cards[index].BasePosition;
+            }
+
+            float low = 0f;
+            float high = 1f;
+            for (int i = 0; i < 14; i++)
+            {
+                float mid = (low + high) * 0.5f;
+                float width = GetScaledContentWidthLocal(baseCenter, mid, out _, out _);
+                if (width <= availableWidth)
+                    low = mid;
+                else
+                    high = mid;
+            }
+
+            float fitScale = low;
+            GetScaledContentWidthLocal(baseCenter, fitScale, out float scaledMin, out float scaledMax);
+            float availableCenter = (left + right) * 0.5f;
+            float scaledCenter = (scaledMin + scaledMax) * 0.5f;
+            float offset = availableCenter - scaledCenter;
+
+            CardVisual currentCard = cards[index];
+            float basePivotLocalX = GetPivotLocalX(currentCard.RectTransform, currentCard.BasePosition);
+            float fittedPivotLocalX = baseCenter + (basePivotLocalX - baseCenter) * fitScale + offset;
+
+            Vector2 position = cards[index].BasePosition;
+            position.x = GetAnchoredXFromPivotLocal(currentCard.RectTransform, fittedPivotLocalX);
+            return position;
+        }
+
+        private float GetBaseContentCenterLocal()
+        {
+            float min = float.MaxValue;
+            float max = float.MinValue;
+
+            for (int i = 0; i < cards.Count; i++)
+            {
+                CardVisual card = cards[i];
+                float pivotLocalX = GetPivotLocalX(card.RectTransform, card.BasePosition);
+                float leftExtent = GetLeftExtent(card.RectTransform, card.BaseScale);
+                float rightExtent = GetRightExtent(card.RectTransform, card.BaseScale);
+                min = Mathf.Min(min, pivotLocalX - leftExtent);
+                max = Mathf.Max(max, pivotLocalX + rightExtent);
+            }
+
+            return (min + max) * 0.5f;
+        }
+
+        private float GetScaledContentWidthLocal(float baseCenter, float spacingScale, out float min, out float max)
+        {
+            min = float.MaxValue;
+            max = float.MinValue;
+
+            for (int i = 0; i < cards.Count; i++)
+            {
+                CardVisual card = cards[i];
+                float basePivotLocalX = GetPivotLocalX(card.RectTransform, card.BasePosition);
+                float pivotLocalX = baseCenter + (basePivotLocalX - baseCenter) * spacingScale;
+                float leftExtent = GetLeftExtent(card.RectTransform, card.BaseScale);
+                float rightExtent = GetRightExtent(card.RectTransform, card.BaseScale);
+                min = Mathf.Min(min, pivotLocalX - leftExtent);
+                max = Mathf.Max(max, pivotLocalX + rightExtent);
+            }
+
+            return max - min;
+        }
+
+        private Vector2 ClampInsideSlotRoot(RectTransform card, Vector2 targetPosition, Vector3 targetScale)
+        {
+            if (!keepCardsInsideSlotRoot || card == null || !TryGetParentLocalHorizontalBounds(out float left, out float right))
+            {
+                return targetPosition;
+            }
+
+            float leftExtent = GetLeftExtent(card, targetScale);
+            float rightExtent = GetRightExtent(card, targetScale);
+            if (right - left <= leftExtent + rightExtent)
+            {
+                targetPosition.x = GetAnchoredXFromPivotLocal(card, (left + right) * 0.5f);
+                return targetPosition;
+            }
+
+            float pivotLocalX = GetPivotLocalX(card, targetPosition);
+            pivotLocalX = Mathf.Clamp(pivotLocalX, left + leftExtent, right - rightExtent);
+            targetPosition.x = GetAnchoredXFromPivotLocal(card, pivotLocalX);
+            return targetPosition;
+        }
+
+        private bool TryGetParentLocalHorizontalBounds(out float left, out float right)
+        {
+            left = 0f;
+            right = 0f;
+
+            RectTransform slotRootRect = slotRoot as RectTransform;
+            if (slotRootRect == null)
+            {
+                return false;
+            }
+
+            Rect rect = slotRootRect.rect;
+            left = rect.xMin + fitHorizontalPadding;
+            right = rect.xMax - fitHorizontalPadding;
+            return right > left;
+        }
+
+        private float GetPivotLocalX(RectTransform rectTransform, Vector2 anchoredPosition)
+        {
+            return GetAnchorReferenceX(rectTransform) + anchoredPosition.x;
+        }
+
+        private float GetAnchoredXFromPivotLocal(RectTransform rectTransform, float pivotLocalX)
+        {
+            return pivotLocalX - GetAnchorReferenceX(rectTransform);
+        }
+
+        private float GetAnchorReferenceX(RectTransform rectTransform)
+        {
+            if (slotRoot is not RectTransform slotRootRect || rectTransform == null)
+            {
+                return 0f;
+            }
+
+            Rect parentRect = slotRootRect.rect;
+            float normalizedReference = Mathf.Lerp(rectTransform.anchorMin.x, rectTransform.anchorMax.x, rectTransform.pivot.x);
+            return parentRect.xMin + parentRect.width * normalizedReference;
+        }
+
+        private static float GetLeftExtent(RectTransform rectTransform, Vector3 scale)
+        {
+            if (rectTransform == null)
+            {
+                return 0f;
+            }
+
+            return rectTransform.rect.width * Mathf.Abs(scale.x) * rectTransform.pivot.x;
+        }
+
+        private static float GetRightExtent(RectTransform rectTransform, Vector3 scale)
+        {
+            if (rectTransform == null)
+            {
+                return 0f;
+            }
+
+            return rectTransform.rect.width * Mathf.Abs(scale.x) * (1f - rectTransform.pivot.x);
+        }
+
+        private void ApplyHoverLayering(bool suppressHover)
+        {
+            if (!bringHoveredCardToFront)
+            {
+                ResetCardSorting();
+                ResetCardRaycasts();
+                return;
+            }
+
+            Transform hoveredCard = null;
+            if (!suppressHover && hoveredIndex >= 0 && hoveredIndex < cards.Count)
+            {
+                hoveredCard = cards[hoveredIndex].RectTransform;
+            }
+
+            for (int i = 0; i < cards.Count; i++)
+            {
+                RectTransform card = cards[i].RectTransform;
+                if (card == null)
+                {
+                    continue;
+                }
+
+                if (card == hoveredCard && IsHoverTargetAvailable(card) && !IsMarkedInactive(card))
+                {
+                    RaiseCardSorting(card);
+                    ApplyCardRaycast(card, true);
+                }
+                else if (hoveredCard == null || suppressHover)
+                {
+                    RestoreCardSorting(card);
+                    RestoreCardRaycast(card);
+                }
+                else
+                {
+                    RestoreCardSorting(card);
+                    ApplyCardRaycast(card, false);
+                }
+            }
+        }
+
+        private void RaiseCardSorting(RectTransform card)
+        {
+            EnsureHoverLayerComponents(card);
+            Canvas canvas = card.GetComponent<Canvas>();
+            if (canvas == null)
+                return;
+
+            if (!cardSortingStates.ContainsKey(card))
+            {
+                cardSortingStates.Add(card, new CardSortingState(canvas.overrideSorting, canvas.sortingLayerID, canvas.sortingOrder));
+            }
+
+            canvas.overrideSorting = true;
+            if (rootCanvas != null)
+            {
+                canvas.sortingLayerID = rootCanvas.sortingLayerID;
+                canvas.sortingOrder = rootCanvas.sortingOrder + hoveredSortingOrder;
+            }
+            else
+            {
+                canvas.sortingOrder = hoveredSortingOrder;
+            }
+        }
+
+        private void RestoreCardSorting(Transform card)
+        {
+            if (card == null || !cardSortingStates.TryGetValue(card, out CardSortingState state))
+            {
+                return;
+            }
+
+            Canvas canvas = card.GetComponent<Canvas>();
+            if (canvas != null)
+            {
+                canvas.overrideSorting = state.OverrideSorting;
+                canvas.sortingLayerID = state.SortingLayerId;
+                canvas.sortingOrder = state.SortingOrder;
+            }
+
+            cardSortingStates.Remove(card);
+        }
+
+        private void ResetCardSorting()
+        {
+            foreach (var entry in cardSortingStates)
+            {
+                if (entry.Key == null)
+                {
+                    continue;
+                }
+
+                Canvas canvas = entry.Key.GetComponent<Canvas>();
+                if (canvas == null)
+                {
+                    continue;
+                }
+
+                canvas.overrideSorting = entry.Value.OverrideSorting;
+                canvas.sortingLayerID = entry.Value.SortingLayerId;
+                canvas.sortingOrder = entry.Value.SortingOrder;
+            }
+
+            cardSortingStates.Clear();
+        }
+
+        private void ApplyCardRaycast(RectTransform card, bool shouldReceiveRaycasts)
+        {
+            if (!routeRaycastsToHoveredCard || card == null || IsMarkedInactive(card))
+            {
+                return;
+            }
+
+            CanvasGroup canvasGroup = card.GetComponent<CanvasGroup>();
+            if (canvasGroup == null || canvasGroup.alpha < 0.99f)
+            {
+                return;
+            }
+
+            if (!cardRaycastStates.ContainsKey(card))
+            {
+                cardRaycastStates.Add(card, canvasGroup.blocksRaycasts);
+            }
+
+            canvasGroup.blocksRaycasts = shouldReceiveRaycasts;
+        }
+
+        private void RestoreCardRaycast(Transform card)
+        {
+            if (card == null || !cardRaycastStates.TryGetValue(card, out bool blocksRaycasts))
+            {
+                return;
+            }
+
+            CanvasGroup canvasGroup = card.GetComponent<CanvasGroup>();
+            if (canvasGroup != null)
+            {
+                canvasGroup.blocksRaycasts = blocksRaycasts;
+            }
+
+            cardRaycastStates.Remove(card);
+        }
+
+        private void ResetCardRaycasts()
+        {
+            foreach (var entry in cardRaycastStates)
+            {
+                if (entry.Key == null)
+                {
+                    continue;
+                }
+
+                CanvasGroup canvasGroup = entry.Key.GetComponent<CanvasGroup>();
+                if (canvasGroup != null)
+                {
+                    canvasGroup.blocksRaycasts = entry.Value;
+                }
+            }
+
+            cardRaycastStates.Clear();
+        }
+
+        private void PruneMissingSortingStates()
+        {
+            List<Transform> missingCards = null;
+            foreach (Transform card in cardSortingStates.Keys)
+            {
+                if (card != null && ContainsCard(card))
+                {
+                    continue;
+                }
+
+                missingCards ??= new List<Transform>();
+                missingCards.Add(card);
+            }
+
+            if (missingCards == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < missingCards.Count; i++)
+            {
+                cardSortingStates.Remove(missingCards[i]);
+            }
+        }
+
+        private bool ContainsCard(Transform card)
+        {
+            for (int i = 0; i < cards.Count; i++)
+            {
+                if (cards[i].RectTransform == card)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void SetCardInfoPanelVisible(bool shouldShow)
@@ -545,6 +990,20 @@ namespace Cyg.UI
             public Vector2 Position { get; }
             public Vector3 Scale { get; }
             public Quaternion Rotation { get; }
+        }
+
+        private readonly struct CardSortingState
+        {
+            public CardSortingState(bool overrideSorting, int sortingLayerId, int sortingOrder)
+            {
+                OverrideSorting = overrideSorting;
+                SortingLayerId = sortingLayerId;
+                SortingOrder = sortingOrder;
+            }
+
+            public bool OverrideSorting { get; }
+            public int SortingLayerId { get; }
+            public int SortingOrder { get; }
         }
     }
 }

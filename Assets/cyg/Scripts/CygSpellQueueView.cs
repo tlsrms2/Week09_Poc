@@ -22,10 +22,16 @@ namespace Cyg.UI
         [SerializeField] private TMP_FontAsset sharedFont;
         [SerializeField] private string emptyListText = "등록된 주문 없음";
         [SerializeField] private string title = "등록 주문";
-        [SerializeField] private string attackLabel = "최종 공격";
-        [SerializeField] private string defenseLabel = "최종 방어";
+        [SerializeField] private string emptyTotalText = "";
 
-        private readonly List<CardData> registeredCards = new();
+        private static readonly CardType[] displayOrder =
+        {
+            CardType.Attack,
+            CardType.Defense,
+            CardType.Utility_NextTurnDraw
+        };
+
+        private readonly List<QueuedSpell> queuedSpells = new();
 
         private void Awake()
         {
@@ -52,14 +58,14 @@ namespace Cyg.UI
 
         public void ClearQueue()
         {
-            registeredCards.Clear();
+            queuedSpells.Clear();
             RefreshView();
         }
 
-        private void HandleBlockPlaced(CardData card, int _, int __)
+        private void HandleBlockPlaced(CardData card, int originX, int originY)
         {
             if (card != null)
-                registeredCards.Add(card);
+                queuedSpells.Add(new QueuedSpell(card, originX, originY));
 
             RefreshView();
         }
@@ -89,34 +95,119 @@ namespace Cyg.UI
             if (totalText != null)
             {
                 ApplySharedFont(totalText);
-                var (damage, defense) = gridManager != null ? gridManager.GetPreview() : (0, 0);
-                totalText.SetText($"{attackLabel} {damage}\n{defenseLabel} {defense}");
+                totalText.SetText(BuildTotalText());
             }
         }
 
         private string BuildSpellListText()
         {
-            if (registeredCards.Count == 0)
+            if (queuedSpells.Count == 0)
                 return emptyListText;
 
             var builder = new StringBuilder(256);
-            for (int i = 0; i < registeredCards.Count; i++)
+            for (int i = 0; i < queuedSpells.Count; i++)
             {
-                CardData card = registeredCards[i];
+                QueuedSpell queuedSpell = queuedSpells[i];
+                CardData card = queuedSpell.Card;
                 string cardName = card != null ? card.CardName : "Unknown";
                 builder.Append(i + 1);
                 builder.Append(". ");
                 builder.Append(cardName);
                 builder.Append("  ");
-                builder.Append(card != null && card.Type == CardType.Attack ? "공격" : "방어");
+                builder.Append(card != null ? GetQueueLabel(card.Type) : "효과");
                 builder.Append(" ");
-                builder.Append(card != null ? card.BasePower : 0);
+                builder.Append(GetEffectivePower(queuedSpell));
 
-                if (i < registeredCards.Count - 1)
+                if (i < queuedSpells.Count - 1)
                     builder.AppendLine();
             }
 
             return builder.ToString();
+        }
+
+        private string BuildTotalText()
+        {
+            if (queuedSpells.Count == 0)
+                return emptyTotalText;
+
+            var builder = new StringBuilder(96);
+
+            foreach (CardType type in displayOrder)
+            {
+                int value = GetQueuedTotal(type);
+                if (value <= 0)
+                    continue;
+
+                if (builder.Length > 0)
+                    builder.AppendLine();
+
+                builder.Append(GetTotalLabel(type));
+                builder.Append(" ");
+                builder.Append(value);
+            }
+
+            return builder.Length > 0 ? builder.ToString() : emptyTotalText;
+        }
+
+        private int GetQueuedTotal(CardType type)
+        {
+            int total = 0;
+            for (int i = 0; i < queuedSpells.Count; i++)
+            {
+                QueuedSpell queuedSpell = queuedSpells[i];
+                CardData card = queuedSpell.Card;
+                if (card == null || card.Type != type)
+                    continue;
+
+                total += GetEffectivePower(queuedSpell);
+            }
+
+            return total;
+        }
+
+        private int GetEffectivePower(QueuedSpell queuedSpell)
+        {
+            CardData card = queuedSpell.Card;
+            if (card == null)
+                return 0;
+
+            if (gridManager == null)
+                return card.BasePower;
+
+            int overlapBonus = 0;
+            foreach (var (col, row, _) in card.GetOccupiedCells())
+            {
+                int gx = queuedSpell.OriginX + col;
+                int gy = queuedSpell.OriginY + row;
+                if (gx < 0 || gx >= GridManager.GridSize || gy < 0 || gy >= GridManager.GridSize)
+                    continue;
+
+                overlapBonus += Mathf.Max(0, gridManager.GetOverlapCount(gx, gy) - 1);
+            }
+
+            return card.BasePower * (1 + overlapBonus);
+        }
+
+        private static string GetQueueLabel(CardType type)
+        {
+            return type switch
+            {
+                CardType.Attack => "공격",
+                CardType.Defense => "방어",
+                CardType.Utility_NextTurnDraw => "다음 턴 드로우",
+                _ => type.ToString()
+            };
+        }
+
+        private static string GetTotalLabel(CardType type)
+        {
+            return type switch
+            {
+                CardType.Attack => "최종 공격",
+                CardType.Defense => "최종 방어",
+                CardType.Utility_NextTurnDraw => "다음 턴 드로우",
+                _ => type.ToString()
+            };
         }
 
         private void EnsureTextObjects()
@@ -172,6 +263,20 @@ namespace Cyg.UI
         {
             if (text != null && sharedFont != null)
                 text.font = sharedFont;
+        }
+
+        private readonly struct QueuedSpell
+        {
+            public QueuedSpell(CardData card, int originX, int originY)
+            {
+                Card = card;
+                OriginX = originX;
+                OriginY = originY;
+            }
+
+            public CardData Card { get; }
+            public int OriginX { get; }
+            public int OriginY { get; }
         }
 
     }
