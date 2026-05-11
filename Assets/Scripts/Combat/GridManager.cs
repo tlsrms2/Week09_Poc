@@ -219,21 +219,29 @@ public class GridManager : MonoBehaviour
 
                 // ── 겹친 공격 카드의 결산 피해량 증폭 ──
                 case CardType.OverlapBoostAttack:
-                    if (targetCard.Effects.Any(e => e.effectType == CardType.Attack || e.effectType == CardType.Drain))
+                {
+                    int attackCount = targetCard.Effects.Count(e => e.effectType == CardType.Attack || e.effectType == CardType.Drain);
+                    if (attackCount > 0)
                     {
-                        targetBlock.bonusDamage += effect.power;
-                        Debug.Log($"[GridManager] {sourceCard.CardName} → {targetCard.CardName} 결산 피해 +{effect.power}");
+                        int bonus = effect.power * attackCount;
+                        targetBlock.bonusDamage += bonus;
+                        Debug.Log($"[GridManager] {sourceCard.CardName} → {targetCard.CardName} 결산 피해 +{bonus} (Attack {attackCount}개 × {effect.power})");
                     }
                     break;
+                }
 
                 // ── 겹친 방어 카드의 결산 방어도 증폭 ──
                 case CardType.OverlapBoostDefense:
-                    if (targetCard.Effects.Any(e => e.effectType == CardType.Defense))
+                {
+                    int defenseCount = targetCard.Effects.Count(e => e.effectType == CardType.Defense);
+                    if (defenseCount > 0)
                     {
-                        targetBlock.bonusDefense += effect.power;
-                        Debug.Log($"[GridManager] {sourceCard.CardName} → {targetCard.CardName} 결산 방어도 +{effect.power}");
+                        int bonus = effect.power * defenseCount;
+                        targetBlock.bonusDefense += bonus;
+                        Debug.Log($"[GridManager] {sourceCard.CardName} → {targetCard.CardName} 결산 방어도 +{bonus} (Defense {defenseCount}개 × {effect.power})");
                     }
                     break;
+                }
 
                 // ── 겹친 카드의 겹치기 효과 두 번 발동 (중첩 불가) ──
                 case CardType.DoubleOverlapEffect:
