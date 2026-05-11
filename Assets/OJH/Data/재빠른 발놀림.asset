@@ -18,7 +18,7 @@ MonoBehaviour:
   overlapEffects:
   - effectType: 5
     power: 1
-  overlapDescription: "\uC989\uC2DC \uCE74\uB4DC\uB97C (0)\uC7A5 \uBF51\uC2B5\uB2C8\uB2E4."
+  overlapDescription: "\uC989\uC2DC \uCE74\uB4DC\uB97C {0}\uC7A5 \uBF51\uC2B5\uB2C8\uB2E4."
   width: 2
   height: 1
   symbols: 0400000004000000

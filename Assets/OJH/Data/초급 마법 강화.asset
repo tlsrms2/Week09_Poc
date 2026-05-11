@@ -18,7 +18,7 @@ MonoBehaviour:
   overlapEffects:
   - effectType: 6
     power: 1
-  overlapDescription: "\uACB9\uCE5C \uCE74\uB4DC\uC758 \uD53C\uD574\uB7C9\uC744 (0)
+  overlapDescription: "\uACB9\uCE5C \uCE74\uB4DC\uC758 \uD53C\uD574\uB7C9\uC744 {0}
     \uC99D\uAC00\uC2DC\uD0B5\uB2C8\uB2E4."
   width: 2
   height: 1

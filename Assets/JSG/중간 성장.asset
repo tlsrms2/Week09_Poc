@@ -19,7 +19,7 @@ MonoBehaviour:
     power: 0
   overlapEffects:
   - effectType: 10
-    power: 5
+    power: 3
   overlapDescription: "\uACB0\uC0B0 \uD53C\uD574\uB7C9\uC774 {0} \uC99D\uAC00\uD569\uB2C8\uB2E4."
   width: 2
   height: 2

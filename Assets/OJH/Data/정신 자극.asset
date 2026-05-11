@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: "\uC815\uC2E0 \uC790\uADF9"
   m_EditorClassIdentifier: Assembly-CSharp::CardData
   cardName: "\uC815\uC2E0 \uC790\uADF9"
-  description: "\uB2E4\uC74C \uD134\uC774 \uC2DC\uC791\uB420 \uB54C \uCE74\uB4DC\uB97C
-    (0)\uC7A5 \uB354 \uBF51\uC2B5\uB2C8\uB2E4."
+  description: "\uB2E4\uC74C \uD134 \uC2DC\uC791 \uC2DC \uCE74\uB4DC\uB97C {0}\uC7A5
+    \uB354 \uBF51\uC2B5\uB2C8\uB2E4."
   effects:
   - effectType: 4
     power: 1
