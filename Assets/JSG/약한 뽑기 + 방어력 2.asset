@@ -16,7 +16,7 @@ MonoBehaviour:
   description: "\uD134 \uC885\uB8CC \uC2DC \uBC29\uC5B4\uB3C4\uB97C {0} \uC5BB\uC2B5\uB2C8\uB2E4."
   effects:
   - effectType: 1
-    power: 5
+    power: 3
   overlapEffects:
   - effectType: 5
     power: 1
