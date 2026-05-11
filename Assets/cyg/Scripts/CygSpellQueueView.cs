@@ -170,11 +170,21 @@ namespace Cyg.UI
                     }
                     else
                     {
+                        int attackCount  = 0;
+                        int defenseCount = 0;
+                        foreach (var e in card.Effects)
+                        {
+                            if (e.effectType == CardType.Attack || e.effectType == CardType.Drain) attackCount++;
+                            if (e.effectType == CardType.Defense) defenseCount++;
+                        }
+                        int perAttack  = attackCount  > 0 ? bonusDmg / attackCount  : 0;
+                        int perDefense = defenseCount > 0 ? bonusDef / defenseCount : 0;
+
                         foreach (var effect in card.Effects)
                         {
                             int power = effect.power;
-                            if (effect.effectType == CardType.Attack || effect.effectType == CardType.Drain) power += bonusDmg;
-                            if (effect.effectType == CardType.Defense) power += bonusDef;
+                            if (effect.effectType == CardType.Attack || effect.effectType == CardType.Drain) power += perAttack;
+                            if (effect.effectType == CardType.Defense) power += perDefense;
                             builder.Append("  ");
                             builder.Append(GetEffectLabel(effect.effectType));
                             builder.Append(" ");
@@ -198,12 +208,22 @@ namespace Cyg.UI
             if (string.IsNullOrWhiteSpace(text)) return string.Empty;
 
             var effects = card.Effects;
+            int attackCount  = 0;
+            int defenseCount = 0;
+            foreach (var e in effects)
+            {
+                if (e.effectType == CardType.Attack || e.effectType == CardType.Drain) attackCount++;
+                if (e.effectType == CardType.Defense) defenseCount++;
+            }
+            int perAttack  = attackCount  > 0 ? bonusDmg / attackCount  : 0;
+            int perDefense = defenseCount > 0 ? bonusDef / defenseCount : 0;
+
             for (int i = 0; i < effects.Count; i++)
             {
                 int power = effects[i].power;
                 var type  = effects[i].effectType;
-                if (type == CardType.Attack || type == CardType.Drain) power += bonusDmg;
-                if (type == CardType.Defense)                          power += bonusDef;
+                if (type == CardType.Attack || type == CardType.Drain) power += perAttack;
+                if (type == CardType.Defense)                          power += perDefense;
                 text = text.Replace("{" + i + "}", power.ToString());
             }
             return text;
