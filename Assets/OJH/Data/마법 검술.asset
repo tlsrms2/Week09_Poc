@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5314c3e4d98d2a841b3148bac9fcbfa4, type: 3}
   m_Name: "\uB9C8\uBC95 \uAC80\uC220"
   m_EditorClassIdentifier: Assembly-CSharp::CardData
-  cardName: "\uB9C8\uBC95 \uD0C4\uD658"
+  cardName: "\uB9C8\uBC95 \uAC80\uC220"
   description: 
   effects: []
   overlapEffects:
