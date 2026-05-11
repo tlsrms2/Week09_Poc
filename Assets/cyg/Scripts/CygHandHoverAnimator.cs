@@ -53,6 +53,7 @@ namespace Cyg.UI
         private float cardInfoHideTimer;
         private int cachedChildCount = -1;
         private Coroutine refreshRoutine;
+        private bool isPlacementPhase;
 
         private void Awake()
         {
@@ -61,11 +62,14 @@ namespace Cyg.UI
 
         private void OnEnable()
         {
+            GameEvents.OnCombatStateChanged += HandleCombatStateChanged;
             RequestRefreshCards();
         }
 
         private void OnDisable()
         {
+            GameEvents.OnCombatStateChanged -= HandleCombatStateChanged;
+
             if (refreshRoutine != null)
             {
                 StopCoroutine(refreshRoutine);
@@ -76,6 +80,16 @@ namespace Cyg.UI
             ResetCardSorting();
             ResetCardRaycasts();
             SetCardInfoPanelVisible(false);
+        }
+
+        private void HandleCombatStateChanged(CombatState state)
+        {
+            isPlacementPhase = state == CombatState.Placement;
+            if (!isPlacementPhase)
+            {
+                hoveredIndex = -1;
+                SetCardInfoPanelVisible(false);
+            }
         }
 
         private void Update()
@@ -91,8 +105,10 @@ namespace Cyg.UI
                 return;
             }
 
-            bool isDraggingCard = IsAnyCardDragging();
-            if (isDraggingCard)
+            bool suppressHover = !isPlacementPhase;
+            bool isDraggingCard = !suppressHover && IsAnyCardDragging();
+
+            if (suppressHover || isDraggingCard)
             {
                 hoveredIndex = -1;
             }
@@ -101,9 +117,9 @@ namespace Cyg.UI
                 UpdateHoveredIndex();
             }
 
-            AnimateCards(isDraggingCard);
-            ApplyHoverLayering(isDraggingCard);
-            SetCardInfoPanelVisible(showCardInfoPanelOnHover && (hoveredIndex >= 0 || isDraggingCard));
+            AnimateCards(suppressHover || isDraggingCard);
+            ApplyHoverLayering(suppressHover || isDraggingCard);
+            SetCardInfoPanelVisible(!suppressHover && showCardInfoPanelOnHover && (hoveredIndex >= 0 || isDraggingCard));
         }
 
         public void RefreshCards()

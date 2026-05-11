@@ -45,6 +45,7 @@ public class CardView : MonoBehaviour,
     private Canvas rootCanvas;
     private CanvasGroup canvasGroup;
     private CygHandHoverAnimator handHoverAnimator;
+    private bool isPlacementPhase;
 
     private BlockGhostView ghost;
 
@@ -61,6 +62,21 @@ public class CardView : MonoBehaviour,
         // 프리팹 인스턴스화를 위해 런타임에 동적으로 매니저와 뷰를 탐색
         gridView = FindAnyObjectByType<GridView>();
         gridManager = FindAnyObjectByType<GridManager>();
+    }
+
+    private void OnEnable()
+    {
+        GameEvents.OnCombatStateChanged += HandleCombatStateChanged;
+    }
+
+    private void OnDisable()
+    {
+        GameEvents.OnCombatStateChanged -= HandleCombatStateChanged;
+    }
+
+    private void HandleCombatStateChanged(CombatState state)
+    {
+        isPlacementPhase = state == CombatState.Placement;
     }
 
     private void Start()
@@ -105,6 +121,8 @@ public class CardView : MonoBehaviour,
 
     public void OnBeginDrag(PointerEventData eventData)
     {
+        if (!isPlacementPhase) return;
+
         handHoverAnimator?.ClearHover();
 
         // 카드는 패에 그대로, 반투명 처리
@@ -137,6 +155,8 @@ public class CardView : MonoBehaviour,
 
     public void OnEndDrag(PointerEventData eventData)
     {
+        if (!isPlacementPhase) return;
+
         DestroyGhost();
         gridView.ClearPreview();
 
