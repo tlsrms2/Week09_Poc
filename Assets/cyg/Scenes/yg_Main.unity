@@ -1482,26 +1482,35 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeckManager
   starterDeck:
+  - {fileID: 11400000, guid: 8123c27beec93c744a42a4e5a2b0bd86, type: 2}
+  - {fileID: 11400000, guid: 4cebfa7520170aa4b87bdbdf0c2a9e38, type: 2}
+  - {fileID: 11400000, guid: 3676af7250fd0a8489020e78c99e0da5, type: 2}
+  - {fileID: 11400000, guid: 180576b74cd207642b5165cdd6018ee9, type: 2}
+  - {fileID: 11400000, guid: 7024e7fbedfd6e846b58d4de8539b7e5, type: 2}
+  - {fileID: 11400000, guid: 8cab6d8b354a92940b50fab3b68800d3, type: 2}
+  - {fileID: 11400000, guid: 8cf7f69ed1ab7674abb6ea6813a5b9a1, type: 2}
+  - {fileID: 11400000, guid: a2d6ad9ca7ab43a4990be17dab12a490, type: 2}
+  - {fileID: 11400000, guid: eaed76c39c91fa841b475e914d3485c2, type: 2}
   - {fileID: 11400000, guid: 3214cdc99514ea649942961fe70e6a3a, type: 2}
   - {fileID: 11400000, guid: 5dd1603681b02e049bd6c3f4871d87d0, type: 2}
+  - {fileID: 11400000, guid: 8bd2c5d052da90c478ace499f843c46a, type: 2}
   - {fileID: 11400000, guid: 24f11e06037d93641b4c3903bde5f058, type: 2}
   - {fileID: 11400000, guid: dbbf0f65f141ebb44a80e164d8aa20ea, type: 2}
   - {fileID: 11400000, guid: b699e93177bb48c4e9f858d730950798, type: 2}
+  - {fileID: 11400000, guid: bbb63b77f1a63f74f80148eb844d0f7d, type: 2}
+  - {fileID: 11400000, guid: 604a5120104631a489e2f6dd8d5988b6, type: 2}
+  - {fileID: 11400000, guid: 66cd445947eb89a4db44959271ca5e30, type: 2}
+  - {fileID: 11400000, guid: 3b0e92615512a9d44ad8e27f7477374f, type: 2}
+  - {fileID: 11400000, guid: b4acafefe39e7db49a3aba62ee848180, type: 2}
+  - {fileID: 11400000, guid: a6db14a71aaf9364b8e82730f61ad37b, type: 2}
+  - {fileID: 11400000, guid: 1b1709720ff35384a883cfdf30f41542, type: 2}
   - {fileID: 11400000, guid: 6c14c12bcc538664e8dfb7d44d061b23, type: 2}
+  - {fileID: 11400000, guid: 13dd043bf0cec6448a45d1c8880f6822, type: 2}
   - {fileID: 11400000, guid: 035770ff60079984399752bcd4d5f36e, type: 2}
   - {fileID: 11400000, guid: a73167686a706fc4d93fa47f94748dc7, type: 2}
   - {fileID: 11400000, guid: 0c88feef0588fee45bd089f8afa2cb66, type: 2}
   - {fileID: 11400000, guid: 35556961e93d99f48a5b4c9f27fe28e8, type: 2}
   - {fileID: 11400000, guid: d0f21db4347c11747bdf61c6d5c0a951, type: 2}
-  - {fileID: 11400000, guid: a6db14a71aaf9364b8e82730f61ad37b, type: 2}
-  - {fileID: 11400000, guid: bbb63b77f1a63f74f80148eb844d0f7d, type: 2}
-  - {fileID: 11400000, guid: 66cd445947eb89a4db44959271ca5e30, type: 2}
-  - {fileID: 11400000, guid: 680b3f8faeb190b4fb35bea55dbeeb58, type: 2}
-  - {fileID: 11400000, guid: fde4da9b180379546934062f6193c619, type: 2}
-  - {fileID: 11400000, guid: 7d68c1fab48950f4fb5433bd04a38215, type: 2}
-  - {fileID: 11400000, guid: 9d1d4ad0e72e27a41b499eff6e1518ff, type: 2}
-  - {fileID: 11400000, guid: 36547b84ceaedcc4fbfbd2f3bed05c4c, type: 2}
-  - {fileID: 11400000, guid: 43e4d8c532b658240a5c0c1ece2eff19, type: 2}
   drawCountPerTurn: 6
 --- !u!1 &649544377
 GameObject:

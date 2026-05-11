@@ -13,9 +13,13 @@ MonoBehaviour:
   m_Name: "\uC2E0\uBE44\uD55C \uC9C0\uB2A5"
   m_EditorClassIdentifier: Assembly-CSharp::CardData
   cardName: "\uC2E0\uBE44\uD55C \uC9C0\uB2A5"
-  description: "\uB2E4\uC74C \uD134\uC5D0 \uCE74\uB4DC\uB97C 2\uC7A5 \uB354 \uB4DC\uB85C\uC6B0\uD569\uB2C8\uB2E4."
-  cardType: 2
-  basePower: 2
+  description: "\uB2E4\uC74C \uD134 \uC2DC\uC791 \uC2DC \uCE74\uB4DC\uB97C {0}\uC7A5
+    \uB354 \uBF51\uC2B5\uB2C8\uB2E4."
+  effects:
+  - effectType: 4
+    power: 2
+  overlapEffects: []
+  overlapDescription: 
   width: 2
   height: 2
   symbols: 02000000040000000400000000000000
