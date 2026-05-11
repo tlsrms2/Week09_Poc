@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: "[2 x 1] \uBD88\uBB3C"
   m_EditorClassIdentifier: Assembly-CSharp::CardData
   cardName: "[2 x 1] \uBD88\uBB3C"
-  description: "5\uB380 5\uBC29\uC5B4\uB3C4"
+  description: "{0}\uB380 {1}\uBC29\uC5B4\uB3C4"
   effects:
   - effectType: 0
     power: 5

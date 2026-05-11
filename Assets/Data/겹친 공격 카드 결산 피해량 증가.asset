@@ -21,7 +21,7 @@ MonoBehaviour:
   - effectType: 6
     power: 5
   overlapDescription: "\uACB9\uCE5C \uACF5\uACA9 \uCE74\uB4DC\uC758 \uACB0\uC0B0
-    \uD53C\uD574\uB7C9\uC744 5 \uC99D\uAC00\uC2DC\uD0B5\uB2C8\uB2E4."
+    \uD53C\uD574\uB7C9\uC744 {0} \uC99D\uAC00\uC2DC\uD0B5\uB2C8\uB2E4."
   width: 1
   height: 1
   symbols: 01000000

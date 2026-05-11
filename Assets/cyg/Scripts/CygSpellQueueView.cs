@@ -29,6 +29,8 @@ namespace Cyg.UI
         private readonly List<CardData> registeredCards = new();
         private int resolvingIndex = -1;
         private int resolvedCount = 0;
+        private int instantOverlapDamage = 0;
+        private int instantOverlapDefense = 0;
 
         private void Awake()
         {
@@ -43,6 +45,7 @@ namespace Cyg.UI
             GameEvents.OnResolutionPhaseStarted += HandleResolutionPhaseStarted;
             GameEvents.OnResolutionResult       += HandleResolutionResult;
             GameEvents.OnResolutionComplete     += HandleResolutionComplete;
+            GameEvents.OnOverlapEffectTriggered += HandleOverlapEffectTriggered;
 
             if (findGridManagerOnEnable && gridManager == null)
                 gridManager = FindAnyObjectByType<GridManager>();
@@ -57,6 +60,7 @@ namespace Cyg.UI
             GameEvents.OnResolutionPhaseStarted -= HandleResolutionPhaseStarted;
             GameEvents.OnResolutionResult       -= HandleResolutionResult;
             GameEvents.OnResolutionComplete     -= HandleResolutionComplete;
+            GameEvents.OnOverlapEffectTriggered -= HandleOverlapEffectTriggered;
         }
 
         public void ClearQueue()
@@ -75,7 +79,16 @@ namespace Cyg.UI
 
         private void HandleDrawPhaseStarted(int _)
         {
+            instantOverlapDamage = 0;
+            instantOverlapDefense = 0;
             ClearQueue();
+        }
+
+        private void HandleOverlapEffectTriggered(ResolutionResult result)
+        {
+            instantOverlapDamage  += result.damage;
+            instantOverlapDefense += result.defense;
+            RefreshView();
         }
 
         private void HandleResolutionPhaseStarted()
@@ -120,7 +133,9 @@ namespace Cyg.UI
             {
                 ApplySharedFont(totalText);
                 ResolutionResult r = gridManager != null ? gridManager.GetPreview() : default;
-                totalText.SetText($"{attackLabel} {r.damage}\n{defenseLabel} {r.defense}");
+                string atkText = instantOverlapDamage  > 0 ? $"{r.damage} (+{instantOverlapDamage} 즉시)"  : r.damage.ToString();
+                string defText = instantOverlapDefense > 0 ? $"{r.defense} (+{instantOverlapDefense} 즉시)" : r.defense.ToString();
+                totalText.SetText($"{attackLabel} {atkText}\n{defenseLabel} {defText}");
             }
         }
 
@@ -129,12 +144,15 @@ namespace Cyg.UI
             if (registeredCards.Count == 0)
                 return emptyListText;
 
+            var blockPreviews = gridManager != null ? gridManager.GetPlacedBlockPreviews() : null;
             string hexColor = ColorUtility.ToHtmlStringRGB(activeSpellColor);
             var builder = new StringBuilder(256);
             for (int i = 0; i < registeredCards.Count; i++)
             {
                 CardData card = registeredCards[i];
                 bool isResolving = i == resolvingIndex;
+                int bonusDmg = (blockPreviews != null && i < blockPreviews.Length) ? blockPreviews[i].bonusDamage  : 0;
+                int bonusDef = (blockPreviews != null && i < blockPreviews.Length) ? blockPreviews[i].bonusDefense : 0;
 
                 if (isResolving) builder.Append($"<color=#{hexColor}>");
 
@@ -144,12 +162,24 @@ namespace Cyg.UI
 
                 if (card != null)
                 {
-                    foreach (var effect in card.Effects)
+                    string desc = BuildDescriptionWithBonus(card, bonusDmg, bonusDef);
+                    if (!string.IsNullOrWhiteSpace(desc))
                     {
                         builder.Append("  ");
-                        builder.Append(GetEffectLabel(effect.effectType));
-                        builder.Append(" ");
-                        builder.Append(effect.power);
+                        builder.Append(desc);
+                    }
+                    else
+                    {
+                        foreach (var effect in card.Effects)
+                        {
+                            int power = effect.power;
+                            if (effect.effectType == CardType.Attack || effect.effectType == CardType.Drain) power += bonusDmg;
+                            if (effect.effectType == CardType.Defense) power += bonusDef;
+                            builder.Append("  ");
+                            builder.Append(GetEffectLabel(effect.effectType));
+                            builder.Append(" ");
+                            builder.Append(power);
+                        }
                     }
                 }
 
@@ -162,15 +192,36 @@ namespace Cyg.UI
             return builder.ToString();
         }
 
+        private static string BuildDescriptionWithBonus(CardData card, int bonusDmg, int bonusDef)
+        {
+            string text = card.Description;
+            if (string.IsNullOrWhiteSpace(text)) return string.Empty;
+
+            var effects = card.Effects;
+            for (int i = 0; i < effects.Count; i++)
+            {
+                int power = effects[i].power;
+                var type  = effects[i].effectType;
+                if (type == CardType.Attack || type == CardType.Drain) power += bonusDmg;
+                if (type == CardType.Defense)                          power += bonusDef;
+                text = text.Replace("{" + i + "}", power.ToString());
+            }
+            return text;
+        }
+
         private static string GetEffectLabel(CardType type) => type switch
         {
             CardType.Attack  => "공격",
             CardType.Defense => "방어",
             CardType.Heal    => "회복",
             CardType.Drain   => "흡수",
-            CardType.Draw    => "드로우(다음턴)",
-            CardType.DrawNow => "드로우(즉시)",
-            _                => type.ToString(),
+            CardType.Draw               => "드로우(다음턴)",
+            CardType.DrawNow            => "드로우(즉시)",
+            CardType.OverlapBoostAttack    => "겹침공격증가",
+            CardType.OverlapBoostDefense   => "겹침방어증가",
+            CardType.BoostResolutionDamage  => "결산공격증가",
+            CardType.BoostResolutionDefense => "결산방어증가",
+            _                              => type.ToString(),
         };
 
         private void EnsureTextObjects()

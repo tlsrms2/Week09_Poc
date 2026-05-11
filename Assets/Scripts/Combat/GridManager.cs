@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class GridManager : MonoBehaviour
@@ -151,6 +152,15 @@ public class GridManager : MonoBehaviour
     /// <summary> UI 미리보기용 — 현재 배치 기준 합산 결과 반환. 이벤트 발행 없음. </summary>
     public ResolutionResult GetPreview() => Calculate();
 
+    /// <summary> 블록별 (카드, 보너스 피해, 보너스 방어) 반환 — description 실시간 표시용. </summary>
+    public (CardData card, int bonusDamage, int bonusDefense)[] GetPlacedBlockPreviews()
+    {
+        var arr = new (CardData, int, int)[placedBlocks.Count];
+        for (int i = 0; i < placedBlocks.Count; i++)
+            arr[i] = (placedBlocks[i].card, placedBlocks[i].bonusDamage, placedBlocks[i].bonusDefense);
+        return arr;
+    }
+
     private void CalculateAndRaiseResolution()
     {
         StartCoroutine(BlockResolutionRoutine());
@@ -209,7 +219,7 @@ public class GridManager : MonoBehaviour
 
                 // ── 겹친 공격 카드의 결산 피해량 증폭 ──
                 case CardType.OverlapBoostAttack:
-                    if (targetCard.Type == CardType.Attack || targetCard.Type == CardType.Drain)
+                    if (targetCard.Effects.Any(e => e.effectType == CardType.Attack || e.effectType == CardType.Drain))
                     {
                         targetBlock.bonusDamage += effect.power;
                         Debug.Log($"[GridManager] {sourceCard.CardName} → {targetCard.CardName} 결산 피해 +{effect.power}");
@@ -218,7 +228,7 @@ public class GridManager : MonoBehaviour
 
                 // ── 겹친 방어 카드의 결산 방어도 증폭 ──
                 case CardType.OverlapBoostDefense:
-                    if (targetCard.Type == CardType.Defense)
+                    if (targetCard.Effects.Any(e => e.effectType == CardType.Defense))
                     {
                         targetBlock.bonusDefense += effect.power;
                         Debug.Log($"[GridManager] {sourceCard.CardName} → {targetCard.CardName} 결산 방어도 +{effect.power}");
@@ -281,8 +291,12 @@ public class GridManager : MonoBehaviour
     {
         var result = new ResolutionResult();
         foreach (var pb in placedBlocks)
+        {
             foreach (var effect in pb.card.Effects)
                 ApplyEffect(ref result, effect);
+            result.damage  += pb.bonusDamage;
+            result.defense += pb.bonusDefense;
+        }
         return result;
     }
 
@@ -294,9 +308,13 @@ public class GridManager : MonoBehaviour
             case CardType.Defense: result.defense += effect.power; break;
             case CardType.Heal:    result.heal    += effect.power; break;
             case CardType.Draw:    result.draw    += effect.power; break;
-            case CardType.DrawNow: result.drawNow += effect.power; break;
-            case CardType.Drain:   result.damage  += effect.power;
-                                   result.heal    += effect.power; break;
+            case CardType.DrawNow:             result.drawNow += effect.power; break;
+            case CardType.Drain:               result.damage  += effect.power;
+                                               result.heal    += effect.power; break;
+            case CardType.OverlapBoostAttack:   result.damage  += effect.power; break;
+            case CardType.OverlapBoostDefense:  result.defense += effect.power; break;
+            case CardType.BoostResolutionDamage:  result.damage  += effect.power; break;
+            case CardType.BoostResolutionDefense: result.defense += effect.power; break;
         }
     }
 

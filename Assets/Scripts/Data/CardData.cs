@@ -43,6 +43,30 @@ public class CardData : ScriptableObject
     public IReadOnlyList<CardEffect> Effects => effects;
     public IReadOnlyList<CardEffect> OverlapEffects => overlapEffects;
 
+    // {0} → effects[0].power, {1} → effects[1].power 치환
+    public string FormattedDescription
+    {
+        get
+        {
+            string text = description;
+            for (int i = 0; i < effects.Count; i++)
+                text = text.Replace("{" + i + "}", effects[i].power.ToString());
+            return text;
+        }
+    }
+
+    // {0} → overlapEffects[0].power 치환
+    public string FormattedOverlapDescription
+    {
+        get
+        {
+            string text = overlapDescription;
+            for (int i = 0; i < overlapEffects.Count; i++)
+                text = text.Replace("{" + i + "}", overlapEffects[i].power.ToString());
+            return text;
+        }
+    }
+
     // 첫 번째 효과 기준 — 기존 코드 호환용
     public CardType Type    => effects.Count > 0 ? effects[0].effectType : CardType.Attack;
     public int      BasePower => effects.Count > 0 ? effects[0].power    : 0;

@@ -13,14 +13,14 @@ MonoBehaviour:
   m_Name: "\uBC29\uC5B4 \uC131\uC7A5\uD615"
   m_EditorClassIdentifier: Assembly-CSharp::CardData
   cardName: "\uBC29\uC5B4 \uC131\uC7A5\uD615"
-  description: "\uD134 \uC885\uB8CC \uC2DC \uBC29\uC5B4\uB3C4\uB97C 0 \uC5BB\uC2B5\uB2C8\uB2E4."
+  description: "\uD134 \uC885\uB8CC \uC2DC \uBC29\uC5B4\uB3C4\uB97C {0} \uC5BB\uC2B5\uB2C8\uB2E4."
   effects:
   - effectType: 1
     power: 0
   overlapEffects:
   - effectType: 11
     power: 5
-  overlapDescription: "\uACB0\uC0B0 \uBC29\uC5B4\uB3C4\uAC00 5 \uC99D\uAC00\uD569\uB2C8\uB2E4."
+  overlapDescription: "\uACB0\uC0B0 \uBC29\uC5B4\uB3C4\uAC00 {0} \uC99D\uAC00\uD569\uB2C8\uB2E4."
   width: 1
   height: 1
   symbols: 01000000

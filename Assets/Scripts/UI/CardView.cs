@@ -83,7 +83,7 @@ public class CardView : MonoBehaviour,
         }
 
         if (cardNameText != null) cardNameText.text = data.CardName;
-        if (descriptionText != null) descriptionText.text = data.Description;
+        if (descriptionText != null) descriptionText.text = data.FormattedDescription;
         if (powerText != null)    powerText.text    = data.BasePower.ToString();
 
         if (cardTypeIndicator != null)
