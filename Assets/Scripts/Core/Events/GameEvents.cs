@@ -21,6 +21,7 @@ public static class GameEvents
     public static event Action<bool> OnCombatEnded;  // true = win, false = lose
     /// <summary> 전투 상태 전이 시 발행 (새 상태) </summary>
     public static event Action<CombatState> OnCombatStateChanged;
+    public static CombatState CurrentCombatState { get; private set; }
 
     // ─── 턴 흐름 ───
     /// <summary> 플레이어 드로우 페이즈 시작 </summary>
@@ -72,7 +73,11 @@ public static class GameEvents
 
     public static void RaiseCombatStarted() => OnCombatStarted?.Invoke();
     public static void RaiseCombatEnded(bool win) => OnCombatEnded?.Invoke(win);
-    public static void RaiseCombatStateChanged(CombatState state) => OnCombatStateChanged?.Invoke(state);
+    public static void RaiseCombatStateChanged(CombatState state)
+    {
+        CurrentCombatState = state;
+        OnCombatStateChanged?.Invoke(state);
+    }
 
     public static void RaiseDrawPhaseStarted(int drawCount) => OnDrawPhaseStarted?.Invoke(drawCount);
     public static void RaisePlacementPhaseStarted() => OnPlacementPhaseStarted?.Invoke();

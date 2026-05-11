@@ -63,6 +63,7 @@ namespace Cyg.UI
         private void OnEnable()
         {
             GameEvents.OnCombatStateChanged += HandleCombatStateChanged;
+            isPlacementPhase = GameEvents.CurrentCombatState == CombatState.Placement;
             RequestRefreshCards();
         }
 

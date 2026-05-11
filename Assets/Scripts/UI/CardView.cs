@@ -67,6 +67,7 @@ public class CardView : MonoBehaviour,
     private void OnEnable()
     {
         GameEvents.OnCombatStateChanged += HandleCombatStateChanged;
+        isPlacementPhase = GameEvents.CurrentCombatState == CombatState.Placement;
     }
 
     private void OnDisable()
