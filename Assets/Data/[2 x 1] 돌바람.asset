@@ -20,9 +20,7 @@ MonoBehaviour:
     power: 5
   - effectType: 1
     power: 5
-  overlapEffects:
-  - effectType: 0
-    power: 0
+  overlapEffects: []
   overlapDescription: 
   width: 2
   height: 1

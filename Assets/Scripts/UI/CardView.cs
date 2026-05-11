@@ -25,6 +25,7 @@ public class CardView : MonoBehaviour,
     [Header("UI 참조")]
     [SerializeField] private TextMeshProUGUI cardNameText;
     [SerializeField] private TextMeshProUGUI descriptionText;
+    [SerializeField] private TextMeshProUGUI overlapDescriptionText;
     [SerializeField] private Image cardImage;
     [SerializeField] private TextMeshProUGUI powerText;
     [SerializeField] private Image cardTypeIndicator;
@@ -77,6 +78,7 @@ public class CardView : MonoBehaviour,
         {
             if (cardNameText != null) cardNameText.text = string.Empty;
             if (descriptionText != null) descriptionText.text = string.Empty;
+            if (overlapDescriptionText != null) overlapDescriptionText.text = string.Empty;
             if (powerText != null) powerText.text = string.Empty;
             ClearBlockPreview();
             return;
@@ -84,6 +86,11 @@ public class CardView : MonoBehaviour,
 
         if (cardNameText != null) cardNameText.text = data.CardName;
         if (descriptionText != null) descriptionText.text = data.FormattedDescription;
+        if (overlapDescriptionText != null)
+        {
+            overlapDescriptionText.text = data.FormattedOverlapDescription;
+            overlapDescriptionText.gameObject.SetActive(!string.IsNullOrEmpty(data.OverlapDescription));
+        }
         if (powerText != null)    powerText.text    = data.BasePower.ToString();
 
         if (cardTypeIndicator != null)
